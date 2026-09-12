@@ -29,7 +29,7 @@ Complete record of the September 11–12, 2026 session on the `x3` workstation: 
 - **Rotation checklist**: `~/workspace/opencode-history/API_KEY_ROTATION_CHECKLIST.md` (git-committed)
 - **Secret scanner**: `~/workspace/hooks/pre-commit` (active via `core.hooksPath=hooks`)
 - **Live token source of truth**: `~/.env-tokens/ai-agent-tokens-full.env` (chmod 600, never commit)
-- **Backup of all of it**: this repo
+- **Backup of all of it**: this repo — registered in the parent `AGENTS.md` under **§ Backup & Recovery** (restore: clone + `./install.sh`, then fill env templates from `~/.env-tokens/ai-agent-tokens-full.env` and regenerate `agent-env`)
 
 ## Open items (as of Sep 12)
 
