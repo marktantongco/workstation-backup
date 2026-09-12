@@ -273,7 +273,7 @@
         "-y",
         "@modelcontextprotocol/server-github"
       ],
-      "enabled": false,
+      "enabled": true,
       "env": {
         "GITHUB_PERSONAL_ACCESS_TOKEN": "{env:GITHUB_PAT}"
       }
