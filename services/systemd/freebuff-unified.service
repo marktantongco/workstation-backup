@@ -1,0 +1,19 @@
+[Unit]
+Description=Freebuff Unified API Gateway
+After=network.target
+
+[Service]
+Type=simple
+User=root
+WorkingDirectory=/home/x3/freebuff-unified
+ExecStart=/home/x3/freebuff-unified/bin/freebuff-unified -config /home/x3/freebuff-unified/config.yaml
+Restart=on-failure
+RestartSec=5
+StandardOutput=journal
+StandardError=journal
+
+# Auto-approve: allow binding to privileged ports (<1024) if needed
+AmbientCapabilities=CAP_NET_BIND_SERVICE
+
+[Install]
+WantedBy=multi-user.target

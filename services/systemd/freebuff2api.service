@@ -1,0 +1,21 @@
+[Unit]
+Description=Freebuff2API Gateway (Python/FastAPI)
+After=network.target
+Wants=network-online.target
+
+[Service]
+Type=simple
+User=freebuff
+Group=freebuff
+WorkingDirectory=/opt/freebuff/python/Freebuff2API-Optimized
+ExecStart=/opt/freebuff/python/Freebuff2API-Optimized/.venv/bin/python main.py
+Restart=always
+RestartSec=5
+Environment=PATH=/opt/freebuff/python/Freebuff2API-Optimized/.venv/bin:/usr/local/bin:/usr/bin:/bin
+Environment=HOME=/opt/freebuff
+StandardOutput=journal
+StandardError=journal
+SyslogIdentifier=freebuff2api
+
+[Install]
+WantedBy=multi-user.target

@@ -1,0 +1,53 @@
+#!/usr/bin/env bash
+# Pre-commit secret scanner for ~/workspace
+# Installed via: git config core.hooksPath hooks
+# Blocks any commit whose staged diff introduces secret-like strings.
+#
+# NOTE: each PATTERNS entry is "regex<TAB>description". The tab separator is
+# required because regex alternation contains '|' characters.
+
+set -euo pipefail
+
+RED='\033[0;31m'; GRN='\033[0;32m'; NC='\033[0m'
+TAB=$'\t'
+
+PATTERNS=(
+  $'fbu_[0-9a-zA-Z]{16,}\tFreeBuff gateway key (fbu_)'
+  $'(?<![\\w-])(sk|csk)-[A-Za-z0-9_-]{16,}\tAPI key (sk-/csk-)'
+  $'(?<![\\w-])gsk_[A-Za-z0-9]{16,}\tGroq key (gsk_)'
+  $'(?<![\\w-])gh[pousr]_[A-Za-z0-9]{20,}\tGitHub token (ghp_/gho_/ghu_/ghs_/ghr_)'
+  $'github_pat_[A-Za-z0-9_]{20,}\tGitHub fine-grained PAT'
+  $'(?<![\\w-])AKIA[0-9A-Z]{16}\tAWS access key (AKIA)'
+  $'(?<![\\w-])xox[baprs]-[A-Za-z0-9-]{10,}\tSlack token (xox)'
+  $'(?<![\\w-])hf_[A-Za-z0-9]{20,}\tHuggingFace token (hf_)'
+  $'(?<![\\w-])fw_[A-Za-z0-9]{16,}\tFireworks key (fw_)'
+  $'(?<![\\w-])glpat_[A-Za-z0-9_-]{16,}\tGitLab token (glpat_)'
+  $'-----BEGIN (RSA|EC|OPENSSH|DSA) PRIVATE KEY-----\tPrivate key block'
+)
+
+violations=0
+while IFS= read -r -d '' f; do
+  # Skip binary files
+  if LC_ALL=C grep -qI . "$f" 2>/dev/null || [[ ! -s "$f" ]]; then
+    for entry in "${PATTERNS[@]}"; do
+      pat="${entry%%"$TAB"*}"
+      desc="${entry#*"$TAB"}"
+      if grep -laP -- "$pat" "$f" 2>/dev/null >/dev/null; then
+        echo -e "${RED}✗ SECRET DETECTED${NC} in staged file: $f"
+        echo -e "   pattern: $desc"
+        grep -naP -- "$pat" "$f" 2>/dev/null | head -n 3 | cut -c1-160 | sed 's/^/     /'
+        violations=$((violations+1))
+      fi
+    done
+  fi
+done < <(git diff --cached --name-only --diff-filter=ACM -z)
+
+if [[ $violations -gt 0 ]]; then
+  echo
+  echo -e "${RED}Commit BLOCKED: $violations file(s) contain secret-like strings.${NC}"
+  echo "If this is a false positive, commit with: git commit --no-verify"
+  exit 1
+fi
+
+echo -e "${GRN}✓ secret scan clean${NC}"
+exit 0

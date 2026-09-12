@@ -1,0 +1,13 @@
+[Unit]
+Description=Antigravity Proxy Relay (agpx)
+After=default.target
+
+[Service]
+Type=simple
+Environment=AGPX_LOG_DIR=/home/x3/.local/share/agpx/logs
+ExecStart=/home/x3/.local/share/agpx/bin/agpx-relay --config /home/x3/.config/agpx/config.json
+Restart=on-failure
+RestartSec=5
+
+[Install]
+WantedBy=default.target

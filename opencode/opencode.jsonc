@@ -1,0 +1,318 @@
+{
+  "$schema": "https://opencode.ai/config.json",
+  "default_agent": "build",
+  "snapshot": false,
+  "snapshots": false,
+  "small_model": "opencode/big-pickle",
+  "model": "opencode/big-pickle",
+  "permission": {
+    "*": "allow",
+    "bash": "allow",
+    "shell": "allow",
+    "sudo": "allow",
+    "edit": "allow",
+    "read": "allow",
+    "glob": "allow",
+    "grep": "allow",
+    "list": "allow",
+    "task": "allow",
+    "skill": "allow",
+    "lsp": "allow",
+    "todowrite": "allow",
+    "question": "allow",
+    "webfetch": "allow",
+    "websearch": "allow",
+    "external_directory": "allow",
+    "doom_loop": "allow"
+  },
+  "tools": {
+    "github_*": false
+  },
+  "agent": {
+    "build": {
+      "mode": "primary",
+      "permission": {
+        "*": "allow",
+        "bash": "allow",
+        "shell": "allow",
+        "sudo": "allow",
+        "edit": "allow",
+        "read": "allow",
+        "glob": "allow",
+        "grep": "allow",
+        "list": "allow",
+        "task": "allow",
+        "skill": "allow",
+        "lsp": "allow",
+        "todowrite": "allow",
+        "question": "allow",
+        "webfetch": "allow",
+        "websearch": "allow",
+        "external_directory": "allow",
+        "doom_loop": "allow"
+      }
+    },
+    "yolo": {
+      "description": "Autonomous agent with auto-approve permissions and YOLO mode",
+      "mode": "primary",
+      "permission": {
+        "*": "allow",
+        "bash": "allow",
+        "shell": "allow",
+        "sudo": "allow",
+        "edit": "allow",
+        "read": "allow",
+        "glob": "allow",
+        "grep": "allow",
+        "list": "allow",
+        "task": "allow",
+        "skill": "allow",
+        "lsp": "allow",
+        "todowrite": "allow",
+        "question": "allow",
+        "webfetch": "allow",
+        "websearch": "allow",
+        "external_directory": "allow",
+        "doom_loop": "allow"
+      }
+    },
+    "repo-helper": {
+      "description": "Repo chores with GitHub MCP tools (issues, PRs, Actions logs)",
+      "mode": "subagent",
+      "tools": {
+        "github_*": true
+      },
+      "prompt": "You handle GitHub repo chores: issues, pull requests, code search, Actions logs. Use github_* MCP tools. Be concise and cite file:line or URLs."
+    }
+  },
+  "plugin": [
+    "@frankhommers/opencode-yolo",
+    "file:///home/x3/.config/opencode/plugins/rtk.ts",
+    "file:///home/x3/.config/opencode/plugins/freebuff-plugin.ts",
+    "superpowers@git+https://github.com/obra/superpowers.git",
+    "./plugins/caveman/plugin.js"
+  ],
+  "provider": {
+    "freebuff": {
+      "npm": "@ai-sdk/openai-compatible",
+      "name": "Freebuff Unified (local :18080 passthrough)",
+      "options": {
+        "baseURL": "http://127.0.0.1:18080/v1",
+        "apiKey": "{env:FREEBUFF_API_KEY}"
+      },
+      "models": {
+        "z-ai/glm-5.3-flash": {
+          "name": "GLM 5.3 Flash (free, 1M ctx, reasoning)"
+        },
+        "deepseek/deepseek-v4-flash": {
+          "name": "DeepSeek V4 Flash (free, reasoning)"
+        },
+        "mimo/mimo-v2.5": {
+          "name": "MiMo 2.5 (free)"
+        }
+      }
+    },
+    "owl": {
+      "npm": "@ai-sdk/openai-compatible",
+      "name": "OWL Engine (local :31000 AutoClaw)",
+      "options": {
+        "baseURL": "http://127.0.0.1:31000/v1",
+        "apiKey": "owl-local"
+      },
+      "models": {
+        "auto": {
+          "name": "Auto (owl router)"
+        },
+        "glm-5.2": {
+          "name": "GLM 5.2"
+        },
+        "glm-5-turbo": {
+          "name": "GLM 5 Turbo"
+        },
+        "deepseek": {
+          "name": "DeepSeek"
+        },
+        "cheap": {
+          "name": "Cheap (glm-5-turbo)"
+        }
+      }
+    },
+    "cloudflare": {
+      "npm": "@ai-sdk/openai-compatible",
+      "name": "Cloudflare Workers AI",
+      "options": {
+        "baseURL": "https://api.cloudflare.com/client/v4/accounts/{env:CLOUDFLARE_ACCOUNT_ID}/ai/v1",
+        "apiKey": "{env:CLOUDFLARE_API_KEY}"
+      },
+      "models": {
+        "llama-3.1-8b-instruct-fast": {
+          "name": "Cloudflare Llama 3.1 8B Fast",
+          "id": "@cf/meta/llama-3.1-8b-instruct-fast"
+        },
+        "llama-3.2-3b-instruct": {
+          "name": "Cloudflare Llama 3.2 3B",
+          "id": "@cf/meta/llama-3.2-3b-instruct"
+        },
+        "llama-4-scout-17b-16e-instruct": {
+          "name": "Cloudflare Llama 4 Scout",
+          "id": "@cf/meta/llama-4-scout-17b-16e-instruct"
+        },
+        "mistral-small-3.1-24b-instruct": {
+          "name": "Cloudflare Mistral Small 3.1",
+          "id": "@cf/mistralai/mistral-small-3.1-24b-instruct"
+        }
+      }
+    },
+    "ollama": {
+      "options": {
+        "baseURL": "http://localhost:11434/v1"
+      },
+      "models": {
+        "heretic-qwen3-0.6b": {
+          "name": "Heretic Qwen3 0.6B (uncensored, 396MB, local)"
+        },
+        "qwen2.5:3b": {
+          "name": "Qwen 2.5 3B (local)"
+        },
+        "deepseek-r1:1.5b": {
+          "name": "DeepSeek R1 1.5B (local)"
+        },
+        "gemma4:e2b": {
+          "name": "Gemma 4 E2B (local)"
+        }
+      }
+    },
+    "opencode": {
+      "whitelist": [
+        "big-pickle",
+        "deepseek-v4-flash-free",
+        "mimo-v2.5-free",
+        "ling-3.0-flash-fin-free",
+        "nemotron-3-ultra-free",
+        "nemotron-3.5-lightning-free",
+        "muse-spark-1.3-contributor-free",
+        "muse-spark-1.2-contributor-free",
+        "muse-spark-1.2",
+        "claude-sonnet-4-5",
+        "gemini-3-flash",
+        "glm-5.2"
+      ]
+    },
+    "opencode-go": {}
+  },
+  "enabled_providers": [
+    "freebuff",
+    "cloudflare",
+    "ollama",
+    "opencode",
+    "opencode-go"
+  ],
+  "disabled_providers": [
+    "autoclaw",
+    "nvidia"
+  ],
+  "mcp": {
+    "serena": {
+      "type": "local",
+      "command": [
+        "uvx",
+        "--from",
+        "serena-agent",
+        "serena",
+        "start-mcp-server",
+        "--project-from-cwd",
+        "--context",
+        "agent",
+        "--open-web-dashboard",
+        "False"
+      ],
+      "enabled": false
+    },
+    "headroom": {
+      "type": "local",
+      "command": [
+        "/home/x3/.local/bin/headroom",
+        "mcp",
+        "serve"
+      ],
+      "enabled": true
+    },
+    "skillspector": {
+      "type": "local",
+      "command": [
+        "/home/x3/aiworkspace/integrations/SkillSpector/.venv/bin/skillspector",
+        "mcp"
+      ],
+      "enabled": false
+    },
+    "ruv-swarm": {
+      "type": "local",
+      "command": [
+        "npx",
+        "-y",
+        "ruv-swarm",
+        "mcp",
+        "start"
+      ],
+      "enabled": false
+    },
+    "filesystem": {
+      "type": "local",
+      "command": [
+        "npx",
+        "-y",
+        "@modelcontextprotocol/server-filesystem",
+        "."
+      ],
+      "enabled": false
+    },
+    "github": {
+      "type": "local",
+      "command": [
+        "npx",
+        "-y",
+        "@modelcontextprotocol/server-github"
+      ],
+      "enabled": false,
+      "env": {
+        "GITHUB_PERSONAL_ACCESS_TOKEN": "{env:GITHUB_PAT}"
+      }
+    },
+    "octocode": {
+      "type": "local",
+      "command": [
+        "node",
+        "/home/x3/.npm/_npx/083fb27bda2f3c42/node_modules/octocode-mcp/dist/index.js"
+      ],
+      "enabled": true,
+      "env": {
+        "GITHUB_TOKEN": "{env:GITHUB_PAT}"
+      }
+    },
+    "memory": {
+      "type": "local",
+      "command": [
+        "npx",
+        "-y",
+        "@modelcontextprotocol/server-memory"
+      ],
+      "enabled": false
+    },
+    "parallel-search": {
+      "type": "remote",
+      "url": "https://search.parallel.ai/mcp",
+      "enabled": true
+    },
+    "graphify": {
+      "type": "local",
+      "command": [
+        "/home/x3/.local/bin/graphify-mcp"
+      ],
+      "enabled": true
+    }
+  },
+  "instructions": [
+    "AGENTS.md"
+  ],
+  "skills": {}
+}

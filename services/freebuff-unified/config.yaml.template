@@ -1,0 +1,89 @@
+server:
+  listen: ":18080"
+  auto_approve: true
+  api_keys:
+    - "<REPLACE_ME>"
+    - "<REPLACE_ME>"
+
+upstream:
+  base_url: "https://www.codebuff.com"
+  cost_mode: "free"
+  default_model: "deepseek/deepseek-v4-pro"
+
+auth:
+  api_keys:
+    - "<REPLACE_ME>"
+    - "<REPLACE_ME>"
+  dir: "auths"
+  breaker:
+    threshold: 3
+    cooldown: 12h
+
+stealth:
+  strip_headers: true
+  enabled: false
+  auto_refresh_pool: true
+  proxy_refresh_mins: 30
+  max_pool_proxies: 12
+  profile: "chrome120"
+  us_proxies:
+    - "socks5://103.210.161.8:1080"
+    - "socks5://101.36.104.46:10808"
+    - "socks5://147.45.60.136:1082"
+    - "socks5://147.45.60.139:1082"
+    - "socks5://45.32.160.61:1088"
+    - "socks5://185.222.138.237:1080"
+    - "socks5://5.255.123.162:1080"
+    - "socks5://5.75.133.113:10809"
+    - "socks5://108.174.152.80:1080"
+    - "socks5://121.169.46.116:1090"
+    - "socks5://118.179.102.168:9090"
+    - "socks5://185.210.85.26:56981"
+  # SOCKS5 proxy pool (Webshare format: host:port:user:pass:country)
+  # proxy_url: "http://example.com/proxies.txt"
+  # proxy_refresh_mins: 30
+  # strict_geo: false
+  # geo_verify: false
+  # searxng_url: "http://127.0.0.1:8888"
+  # Set SEARXNG_URL env to override
+
+limits:
+  global_rpm: 120
+  account_rpm: 30
+  client_rpm: 60
+
+# Front-door mode: transparently forwards /v1/* to a freebuff-proxy backend
+proxy:
+  enabled: true
+  backend_url: "http://127.0.0.1:3457"
+  mode: "passthrough"
+
+# Dashboard (freebuff-proxy pattern)
+dashboard:
+  enabled: true
+  addr: ":9091"
+  prefix: "/dashboard"
+
+# Hermes stealth sidecar (kori-lab/hermes vendored under deps/hermes)
+# TLS 1.3 / HTTP2 stealth requests via local Node service on :3101
+hermes:
+  enabled: true
+  base_url: "http://127.0.0.1:3101"
+
+parallel:
+  enabled: true
+  base_url: "https://api.parallel.ai"
+  default_mode: "fast"
+  default_processor: "pro-fast"
+  # api_key: read from PARALLEL_API_KEY env when omitted (keyless-first:
+  # deep-research + /v1/responses try without a key and fall back to native)
+
+research:
+  enabled: true
+  max_queries: 5
+  fan_out: 8
+  extract_per_query: 3
+  timeout_ms: 300000
+
+logging:
+  level: "info"
