@@ -22,23 +22,20 @@ auth:
 stealth:
   strip_headers: true
   enabled: false
-  auto_refresh_pool: true
+  # Pool DISABLED 2026-09-14: direct egress ~0.3s TTFB vs 0.36-1.9s through the
+  # public SOCKS5 pool (5x slower typical; dead picks = user-visible timeouts).
+  # NOTE: the gateway builds USProxyPool whenever us_proxies is non-empty —
+  # auto_refresh_pool only gates the Hermes refresher, not the pool itself.
+  # To re-enable with free lists (monosans hour-checked / TheSpeedX volume):
+  #   proxy_url: "https://raw.githubusercontent.com/monosans/proxy-list/main/proxies/socks5.txt"
+  #   proxy_url: "https://raw.githubusercontent.com/TheSpeedX/SOCKS-List/master/socks5.txt"
+  # (plain host:port and socks5://host:port lines are now parsed natively)
+  # Or swap for a paid Webshare list (host:port:user:pass:country).
+  auto_refresh_pool: false
   proxy_refresh_mins: 30
   max_pool_proxies: 12
   profile: "chrome120"
-  us_proxies:
-    - "socks5://103.210.161.8:1080"
-    - "socks5://101.36.104.46:10808"
-    - "socks5://147.45.60.136:1082"
-    - "socks5://147.45.60.139:1082"
-    - "socks5://45.32.160.61:1088"
-    - "socks5://185.222.138.237:1080"
-    - "socks5://5.255.123.162:1080"
-    - "socks5://5.75.133.113:10809"
-    - "socks5://108.174.152.80:1080"
-    - "socks5://121.169.46.116:1090"
-    - "socks5://118.179.102.168:9090"
-    - "socks5://185.210.85.26:56981"
+  us_proxies: []
   # SOCKS5 proxy pool (Webshare format: host:port:user:pass:country)
   # proxy_url: "http://example.com/proxies.txt"
   # proxy_refresh_mins: 30
