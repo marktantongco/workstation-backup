@@ -1,0 +1,17 @@
+[Unit]
+Description=BlacklistedAIProxy - Free model gateway (gemini/kiro/grok/qwen)
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=simple
+User=x3
+WorkingDirectory=/home/x3/workspace/BlacklistedAIProxy
+ExecStart=/usr/bin/node src/core/master.js
+Restart=always
+RestartSec=5
+Environment=NODE_ENV=production
+Environment=MASTER_PORT=3101
+
+[Install]
+WantedBy=multi-user.target

@@ -14,7 +14,7 @@ Complete, **secret-free** backup of the `x3` workstation AI-agent ecosystem (ope
 | `services/freebuff-unified/` | Live `config.yaml` as redacted template + upstream `config.example.yaml` |
 | `workspace/` | Git `pre-commit` secret scanner (11 secret families, tab-separated patterns) |
 | `tools/` | `export.py` — opencode session-history → markdown exporter with secret redaction |
-| `wiki/` | Full action log: history recovery, leak, scrub, rotation status, hardening |
+| `wiki/` | 12-page wiki: architecture, Grok lifecycle, service inventory, disaster recovery, port allocation, Omarchy installation |
 | `install.sh` | One-command restore |
 
 ## Restore on a fresh machine
