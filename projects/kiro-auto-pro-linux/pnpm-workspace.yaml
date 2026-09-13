@@ -5,7 +5,11 @@ allowBuilds:
 
 # Mute deprecation warnings (cache-warm installs don't refetch metadata, so
 # these only appear on cold resolution — e.g. first install on a new machine):
-# - eslint 9.39.4: direct devDep, "no longer supported" notice
+# - eslint 9.x: pinned to the maintenance line ON PURPOSE. eslint 10 crashes
+#   with eslint-config-next because typescript-eslint's scope manager lacks
+#   the addGlobals() API eslint 10 requires (typescript-eslint#11762, #11830;
+#   tracked for Next.js in vercel/next.js#89764). Revisit when typescript-eslint
+#   ships the API, then drop this mute and upgrade.
 # - @esbuild-kit/*: transitive via drizzle-kit, "merged into tsx" notice
 allowedDeprecatedVersions:
   eslint: "9"
