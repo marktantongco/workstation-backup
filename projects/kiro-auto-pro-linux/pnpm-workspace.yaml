@@ -1,0 +1,13 @@
+allowBuilds:
+  esbuild: true
+  sharp: true
+  unrs-resolver: true
+
+# Mute deprecation warnings (cache-warm installs don't refetch metadata, so
+# these only appear on cold resolution — e.g. first install on a new machine):
+# - eslint 9.39.4: direct devDep, "no longer supported" notice
+# - @esbuild-kit/*: transitive via drizzle-kit, "merged into tsx" notice
+allowedDeprecatedVersions:
+  eslint: "9"
+  "@esbuild-kit/core-utils": "3"
+  "@esbuild-kit/esm-loader": "2"

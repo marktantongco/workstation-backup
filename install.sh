@@ -17,7 +17,7 @@ die()  { printf '\033[1;31m[FAIL]\033[0m %s\n' "$*"; exit 1; }
 [[ -d "$BACKUP_DIR/opencode" ]] || die "Run this script from the repo root: ./install.sh"
 
 # ── 1. opencode configs (verbatim, secret-free: {env:VAR} references only) ──
-log "1/6 Installing opencode configs, agents, commands, plugins…"
+log "1/7 Installing opencode configs, agents, commands, plugins…"
 mkdir -p "$H/.config/opencode/agents" "$H/.config/opencode/commands" "$H/.config/opencode/plugins"
 for f in opencode.jsonc opencode.json AGENTS.md; do
   [[ -f "$H/.config/opencode/$f" ]] && cp "$H/.config/opencode/$f" "$H/.config/opencode/$f.bak.$TS"
@@ -30,7 +30,7 @@ rm -rf "$H/.config/opencode/plugins/caveman"
 cp -r "$BACKUP_DIR/opencode/plugins/caveman" "$H/.config/opencode/plugins/caveman"
 
 # ── 2. env token files (TEMPLATES — placeholders must be filled) ──
-log "2/6 Installing env token files as templates…"
+log "2/7 Installing env token files as templates…"
 mkdir -p "$H/.env-tokens" && chmod 700 "$H/.env-tokens"
 for pair in \
   "env/ai-agent-tokens-full.env.template:$H/.env-tokens/ai-agent-tokens-full.env" \
@@ -44,14 +44,14 @@ for pair in \
 done
 
 # ── 3. freebuff-unified gateway config ──
-log "3/6 Installing freebuff-unified config template…"
+log "3/7 Installing freebuff-unified config template…"
 mkdir -p "$H/freebuff-unified"
 [[ -f "$H/freebuff-unified/config.yaml" ]] && cp "$H/freebuff-unified/config.yaml" "$H/freebuff-unified/config.yaml.bak.$TS"
 cp "$BACKUP_DIR/services/freebuff-unified/config.yaml.template" "$H/freebuff-unified/config.yaml"
 chmod 600 "$H/freebuff-unified/config.yaml"
 
 # ── 4. git pre-commit secret scanner ──
-log "4/6 Installing git pre-commit secret scanner…"
+log "4/7 Installing git pre-commit secret scanner…"
 mkdir -p "$H/workspace/hooks"
 cp "$BACKUP_DIR/workspace/pre-commit" "$H/workspace/hooks/pre-commit"
 chmod +x "$H/workspace/hooks/pre-commit"
@@ -63,7 +63,7 @@ else
 fi
 
 # ── 5. systemd units ──
-log "5/6 Installing systemd units…"
+log "5/7 Installing systemd units…"
 for u in freebuff-unified freebuff-proxy freebuff2api freebuff2api-admin aiclient2api; do
   f="$BACKUP_DIR/services/systemd/$u.service"
   [[ -f "$f" ]] && sudo install -m 644 "$f" "/etc/systemd/system/$u.service" \
@@ -76,8 +76,22 @@ fi
 sudo systemctl daemon-reload
 sudo systemctl enable freebuff-unified.service >/dev/null 2>&1 || true
 
-# ── 6. opencode history exporter ──
-log "6/6 Installing opencode-history exporter…"
+# ── 6. project pnpm workspace configs (allowBuilds / overrides) ──
+log "6/7 Installing project pnpm configs…"
+while IFS= read -r -d '' ws; do
+  proj="${ws#projects/}"; proj="${proj%/pnpm-workspace.yaml}"
+  dst="$H/workspace/$proj/pnpm-workspace.yaml"
+  if [[ -d "$H/workspace/$proj" ]]; then
+    [[ -f "$dst" ]] && cp "$dst" "$dst.bak.$TS"
+    cp "$BACKUP_DIR/$ws" "$dst"
+    log "  restored $proj/pnpm-workspace.yaml"
+  else
+    warn "project $proj not present — skipping"
+  fi
+done < <(cd "$BACKUP_DIR" && find projects -name pnpm-workspace.yaml -print0 2>/dev/null)
+
+# ── 7. opencode history exporter ──
+log "7/7 Installing opencode-history exporter…"
 mkdir -p "$H/workspace/opencode-history"
 [[ -f "$BACKUP_DIR/tools/export.py" ]] && cp "$BACKUP_DIR/tools/export.py" "$H/workspace/opencode-history/export.py"
 

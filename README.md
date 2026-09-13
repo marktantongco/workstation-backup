@@ -13,6 +13,7 @@ Complete, **secret-free** backup of the `x3` workstation AI-agent ecosystem (ope
 | `services/systemd/` | freebuff-unified, freebuff-proxy, freebuff2api, freebuff2api-admin, aiclient2api (system) + agpx-relay (user) |
 | `services/freebuff-unified/` | Live `config.yaml` as redacted template + upstream `config.example.yaml` |
 | `workspace/` | Git `pre-commit` secret scanner (11 secret families, tab-separated patterns) |
+| `projects/` | Per-project `pnpm-workspace.yaml` (build allowlists, playwright 1.63 Ubuntu 26.04 override) for BlacklistedAIProxy, kiro-auto-pro-linux |
 | `tools/` | `export.py` — opencode session-history → markdown exporter with secret redaction |
 | `wiki/` | 12-page wiki: architecture, Grok lifecycle, service inventory, disaster recovery, port allocation, Omarchy installation |
 | `install.sh` | One-command restore |
