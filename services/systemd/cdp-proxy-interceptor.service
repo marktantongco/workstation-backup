@@ -1,0 +1,15 @@
+[Unit]
+Description=CDP Proxy Interceptor (Deno MITM for Playwright/Puppeteer CDP traffic)
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=simple
+User=x3
+WorkingDirectory=/home/x3/aiworkspace/cdp-proxy-interceptor
+ExecStart=/home/x3/.deno/deno run --allow-all src/main.ts
+Restart=on-failure
+RestartSec=5
+
+[Install]
+WantedBy=multi-user.target

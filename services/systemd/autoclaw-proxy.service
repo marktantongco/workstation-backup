@@ -1,0 +1,14 @@
+[Unit]
+Description=AutoClaw GLM OpenAI-compatible proxy (:31000)
+After=network.target
+
+[Service]
+User=x3
+WorkingDirectory=/home/x3/aiworkspace/autoclaw-autologin
+ExecStart=/home/x3/aiworkspace/autoclaw-autologin/.venv/bin/python proxy.py
+Restart=always
+RestartSec=5
+NoNewPrivileges=true
+
+[Install]
+WantedBy=multi-user.target

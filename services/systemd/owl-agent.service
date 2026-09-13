@@ -1,0 +1,39 @@
+[Unit]
+Description=🦉 OWL-AGENT vv4.5 — Advanced ML + Self-Healing Plugins (unified installer 5.0)
+Documentation=https://github.com/marktantongco/owl-agent
+After=network.target
+
+[Service]
+Type=simple
+User=root
+Group=root
+WorkingDirectory=/root/.owl-agent
+
+Environment=SSL_CERT_FILE=/etc/ssl/certs/ca-certificates.crt
+Environment=CURL_CA_BUNDLE=/etc/ssl/certs/ca-certificates.crt
+Environment=PYTHONWARNINGS=ignore::DeprecationWarning
+Environment=OWL_USE_REDIS=false
+Environment=OWL_HOME=/root/.owl-agent
+Environment=OWL_API_KEY=fa5073b4fffed874739b4b2174d2267c9c23a09b8cd3ef49a98fa01dc2ff6075
+
+ExecStart=/root/.owl-agent/venv/bin/python /root/.owl-agent/owl_server.py \
+    --host 0.0.0.0 \
+    --api-port 60000 \
+    --metrics-port 9091 \
+    --countries US GB PH  \
+    --ab-test \
+    --ml \
+    --ml-model auto \
+    --plugin-dir /root/.owl-agent/plugins
+
+Restart=always
+RestartSec=10
+
+ProtectHome=false
+NoNewPrivileges=true
+PrivateDevices=true
+ProtectSystem=full
+CapabilityBoundingSet=CAP_NET_BIND_SERVICE
+
+[Install]
+WantedBy=multi-user.target

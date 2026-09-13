@@ -1,0 +1,15 @@
+[Unit]
+Description=Grok Account Replenishment Daemon
+After=network.target
+
+[Service]
+Type=simple
+User=x3
+WorkingDirectory=/home/x3/workspace/grok-register
+ExecStart=/home/x3/.venvs/grok-register/bin/python3 auto_replenish.py
+Restart=always
+RestartSec=30
+Environment=PATH=/home/x3/.venvs/grok-register/bin:/usr/local/bin:/usr/bin:/bin
+
+[Install]
+WantedBy=multi-user.target
