@@ -66,7 +66,8 @@ workstation-backup/
 
 | Version | Date | Commit | Changes |
 |---|---|---|---|
-| **v2.1.0** | 2026-09-14 | *this release* | **CI on every push** (shellcheck + mermaid render check + Arch/Debian container smoke tests of both installers); container-test fixes (`sudo -H` handoff, `restore_tree` source resolution, systemd guards, root corepack, `pciutils`); Node 24 action targets (checkout v7, setup-node v7); **stage-12 post-restore smoke check** in `install-unified.sh` (curl both proxies, advisory) |
+| **v2.1.1** | 2026-09-14 | *this release* | **Automated GitHub releases from this table** (CI release job on `v*` tags, after all validation jobs pass); rolling pacman/apt/npx caches in CI smoke jobs; post-tag E2E baseline captured (all 8 cells transport-OK, QUOTA account state) |
+| v2.1.0 | 2026-09-14 | `1dd5a7a` | **CI on every push** (shellcheck + mermaid render check + Arch/Debian container smoke tests of both installers); container-test fixes (`sudo -H` handoff, `restore_tree` source resolution, systemd guards, root corepack, `pciutils`); Node 24 action targets (checkout v7, setup-node v7); **stage-12 post-restore smoke check** in `install-unified.sh` (curl both proxies, advisory) |
 | v2.0.0 | 2026-09-14 | `aa21302` | Comprehensive README; **`install-unified.sh`** (complete unified installer with E2E health + JA3 escalation + proxy sources); **`install-omarchy.sh`** (Omarchy/Arch variant) |
 | v1.4.0 | 2026-09-14 | `167a6c1` | Live agent-pairing registry backport to both Go proxies (`17a792d`/`113c8ef`); daily E2E health check + thermoptic JA3 escalation; thermoptic `:31280` loopback publish |
 | v1.3.0 | 2026-09-14 | `2243ece` | Fingerprint-fix sources synced; 15-repo relevance verdicts (`15baf13`); stealth spike record (`2332af6`); gateway config/units/installer synced to live (`2243ece`); ops daemons backed up (`5c77130`) |

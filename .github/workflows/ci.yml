@@ -29,6 +29,12 @@ jobs:
       - uses: actions/setup-node@v7
         with:
           node-version: 24
+      - name: Cache npx (mermaid-cli + chromium download)
+        uses: actions/cache@v6
+        with:
+          path: ~/.npm
+          key: npm-mermaid-${{ github.run_id }}
+          restore-keys: npm-mermaid-
       - name: Render-check every mermaid block
         run: ./tools/check-mermaid.sh
 
@@ -38,10 +44,19 @@ jobs:
     container:
       image: archlinux:latest
     steps:
+      # Rolling pacman package cache: each run restores the newest saved
+      # cache (restore-keys prefix) and saves its own — second run onward
+      # installs from cache instead of downloading ~500 MB (incl. nvidia-utils).
+      - name: Cache pacman packages
+        uses: actions/cache@v6
+        with:
+          path: /var/cache/pacman/pkg
+          key: pacman-arch-${{ github.run_id }}
+          restore-keys: pacman-arch-
       - name: Install test prerequisites
-        run: |
-          pacman -Syu --noconfirm
-          pacman -S --noconfirm --needed git sudo
+        # Only checkout/clone prereqs here — the installer itself runs the
+        # full `pacman -Syu`, so don't pay for a duplicate system upgrade.
+        run: pacman -Sy --noconfirm --needed git sudo
       - uses: actions/checkout@v7
       - name: Fresh clone + non-root user + full omarchy install
         run: |
@@ -57,6 +72,15 @@ jobs:
     container:
       image: debian:bookworm
     steps:
+      # Rolling apt cache: lists + downloaded .debs persist across runs.
+      - name: Cache apt archives
+        uses: actions/cache@v6
+        with:
+          path: |
+            /var/cache/apt/archives
+            /var/lib/apt/lists
+          key: apt-debian-${{ github.run_id }}
+          restore-keys: apt-debian-
       - name: Install test prerequisites
         run: |
           apt-get update -qq
@@ -69,3 +93,73 @@ jobs:
           git clone "file://$GITHUB_WORKSPACE" /work
           cd /work
           su testuser -c "./install-unified.sh"
+
+  release:
+    name: GitHub release from version table
+    # Fires on v* tag pushes only; publishes after every validation job passes.
+    if: startsWith(github.ref, 'refs/tags/v')
+    needs: [shellcheck, mermaid, smoke-arch, smoke-debian]
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          fetch-depth: 0  # full history: commit-log fallback for the notes
+      - name: Build release notes from README version table
+        env:
+          TAG: ${{ github.ref_name }}
+        run: |
+          python3 - <<'PY' | tee release-notes.md
+          import os, re, subprocess
+
+          tag = os.environ["TAG"]
+          readme = open("README.md", encoding="utf-8").read()
+
+          changes = None
+          for line in readme.splitlines():
+              # Match the row for this tag: bold (**vX.Y.Z**) or plain.
+              if re.match(rf"^\|\s*\*{{0,2}}{re.escape(tag)}\*{{0,2}}\s*\|", line):
+                  cells = [c.strip() for c in line.strip().strip("|").split("|")]
+                  if len(cells) >= 4:
+                      changes = cells[3]
+                  break
+
+          print(f"## Changes")
+          if changes:
+              print(changes)
+          else:
+              print(f"_No version-table row found for `{tag}` — add one to README.md "
+                    "before tagging next time._")
+
+          print()
+          print("## Commits")
+          try:
+              prev = subprocess.run(
+                  ["git", "describe", "--tags", "--abbrev=0", f"{tag}^"],
+                  capture_output=True, text=True, check=True).stdout.strip()
+              rng = f"{prev}..{tag}"
+              heading = f"since `{prev}`"
+          except subprocess.CalledProcessError:
+              first = subprocess.run(
+                  ["git", "rev-list", "--max-parents=0", "HEAD"],
+                  capture_output=True, text=True, check=True).stdout.strip()
+              rng = f"{first}..{tag}"
+              heading = "(first tagged release)"
+          log = subprocess.run(
+              ["git", "log", "--format=- %h %s", rng],
+              capture_output=True, text=True, check=True).stdout.strip()
+          print(f"_{heading}_")
+          print(log)
+          PY
+      - name: Create GitHub release
+        env:
+          GH_TOKEN: ${{ github.token }}
+          TAG: ${{ github.ref_name }}
+        run: |
+          # Idempotent: re-pushing an existing tag updates the release.
+          if gh release view "$TAG" >/dev/null 2>&1; then
+            gh release edit "$TAG" --title "$TAG" --notes-file release-notes.md
+          else
+            gh release create "$TAG" --title "$TAG" --notes-file release-notes.md
+          fi
