@@ -35,6 +35,10 @@ stealth:
   proxy_refresh_mins: 30
   max_pool_proxies: 12
   profile: "chrome120"
+  # ...or "random" / "rotate" / named ID (chrome131, chrome133, edge106,
+  # firefox102, firefox105, firefox120, safari16, safari17, ios, android).
+  # Pool validation engine: "internal" (default) or "prox5".
+  validator: "internal"
   us_proxies: []
   # SOCKS5 proxy pool (Webshare format: host:port:user:pass:country)
   # proxy_url: "http://example.com/proxies.txt"
@@ -66,6 +70,16 @@ dashboard:
 hermes:
   enabled: true
   base_url: "http://127.0.0.1:3101"
+
+# LMArena sidecar (deps/lmarena-stealth-proxy on :3103) + manual eval
+# harness (blind A/B paste + score, no upstream fetch) + public
+# leaderboard snapshot (read-only HF data, cached 24h).
+lmarena:
+  enabled: true
+  base_url: "http://127.0.0.1:3103"
+  eval_dir: "evals"
+  leaderboard: true
+  leaderboard_refresh_hours: 24
 
 parallel:
   enabled: true

@@ -32,21 +32,16 @@ stealth:
   proxy_refresh_mins: 30
   max_pool_proxies: 12
   profile: "chrome120"
+  # ...or "random" / "rotate" / named ID (chrome131, chrome133, edge106,
+  # firefox102, firefox105, firefox120, safari16, safari17, ios, android).
+  # Pool validation engine: "internal" (default) or "prox5" (validation
+  # engine + mid-dial retry; refresher + metrics unchanged).
+  validator: "internal"
   # US SOCKS5 egress pool (round-robin). Generate candidates with
   # scripts/fetch-proxies.sh and validate with scripts/test-proxies.sh.
-  # Feed options (plain host:port and socks5://host:port lines are parsed
-  # natively by the pool since 2026-09-14; Webshare host:port:user:pass[:cc]
-  # also supported). monosans is hour-checked; TheSpeedX is high-volume:
-  #   proxy_url: "https://raw.githubusercontent.com/monosans/proxy-list/main/proxies/socks5.txt"
-  #   proxy_url: "https://raw.githubusercontent.com/TheSpeedX/SOCKS-List/master/socks5.txt"
-  # NOTE: USProxyPool is built whenever us_proxies is non-empty —
-  # auto_refresh_pool only gates the Hermes refresher, not the pool.
-  # Direct egress measured ~5x faster than the public pool; leave empty
-  # ([]) unless stealth egress is actually required.
-  us_proxies: []
-  # us_proxies:
-  #   - "socks5://REPLACE_ME_HOST_1:1080"
-  #   - "socks5://REPLACE_ME_HOST_2:1080"
+  us_proxies:
+    - "socks5://REPLACE_ME_HOST_1:1080"
+    - "socks5://REPLACE_ME_HOST_2:1080"
   # SearXNG keyless search backend (optional).
   # searxng_url: "http://127.0.0.1:8888"
   # Set SEARXNG_URL env to override
@@ -75,6 +70,21 @@ dashboard:
 hermes:
   enabled: true
   base_url: "http://127.0.0.1:3101"
+
+# LMArena stealth proxy sidecar (vendored under deps/lmarena-stealth-proxy,
+# served by index.js on :3103; :3102 stays reserved for a second hermes).
+# Gateway relays POST /v1/lmarena/v1/responses + session CRUD; sidecar owns
+# sessions and per-session rate limits. Key-protected like /v1/*.
+lmarena:
+  enabled: true
+  base_url: "http://127.0.0.1:3103"
+  # Manual-eval harness store (blind A/B paste + score, no upstream fetch).
+  # Pasted outputs are user data — keep untracked, like auths/.
+  eval_dir: "evals"
+  # Public text-leaderboard snapshot (read-only HF datasets-server data,
+  # cached under eval_dir, refreshed at most once per refresh window).
+  leaderboard: true
+  leaderboard_refresh_hours: 24
 
 parallel:
   enabled: true

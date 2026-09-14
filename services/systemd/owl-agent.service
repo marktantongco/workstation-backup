@@ -1,39 +1,35 @@
 [Unit]
-Description=🦉 OWL-AGENT vv4.5 — Advanced ML + Self-Healing Plugins (unified installer 5.0)
+Description=🦉 OWL-AGENT vv4.5 — wrapped by owl-agent-supervisor.sh (anti-restart-loop)
 Documentation=https://github.com/marktantongco/owl-agent
 After=network.target
 
 [Service]
 Type=simple
-User=root
-Group=root
-WorkingDirectory=/root/.owl-agent
+User=x1
+Group=x1
+WorkingDirectory=/home/x1/.owl-agent
 
 Environment=SSL_CERT_FILE=/etc/ssl/certs/ca-certificates.crt
 Environment=CURL_CA_BUNDLE=/etc/ssl/certs/ca-certificates.crt
 Environment=PYTHONWARNINGS=ignore::DeprecationWarning
 Environment=OWL_USE_REDIS=false
-Environment=OWL_HOME=/root/.owl-agent
+Environment=OWL_HOME=/home/x1/.owl-agent
 Environment=OWL_API_KEY=fa5073b4fffed874739b4b2174d2267c9c23a09b8cd3ef49a98fa01dc2ff6075
 
-ExecStart=/root/.owl-agent/venv/bin/python /root/.owl-agent/owl_server.py \
-    --host 0.0.0.0 \
-    --api-port 60000 \
-    --metrics-port 9091 \
-    --countries US GB PH  \
-    --ab-test \
-    --ml \
-    --ml-model auto \
-    --plugin-dir /root/.owl-agent/plugins
+# P3-13: supervisor wrapper kills stale owl_server.py + exec's owl_server
+# with same args systemd used. systemd sees a stable wrapper PID; owl_server
+# crash loops are absorbed inside the wrapper (no systemd restart storm).
+ExecStart=/home/x1/.owl-agent/owl-agent-supervisor.sh
 
-Restart=always
+# Last-resort: if the wrapper itself exits (only on SIGTERM/SIGINT trap),
+# systemd restart is fine. P3-13 prevent on exit 78 (EADDRINUSE — wrapper
+# already handles port cleanup) and 0 (wrapper exited normally during stop).
+Restart=on-failure
+RestartPreventExitStatus=0 78
 RestartSec=10
-
-ProtectHome=false
-NoNewPrivileges=true
-PrivateDevices=true
-ProtectSystem=full
-CapabilityBoundingSet=CAP_NET_BIND_SERVICE
+TimeoutStopSec=15
+StartLimitIntervalSec=60
+StartLimitBurst=10
 
 [Install]
 WantedBy=multi-user.target

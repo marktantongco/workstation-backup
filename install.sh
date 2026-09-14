@@ -49,6 +49,7 @@ mkdir -p "$H/freebuff-unified"
 [[ -f "$H/freebuff-unified/config.yaml" ]] && cp "$H/freebuff-unified/config.yaml" "$H/freebuff-unified/config.yaml.bak.$TS"
 cp "$BACKUP_DIR/services/freebuff-unified/config.yaml.template" "$H/freebuff-unified/config.yaml"
 chmod 600 "$H/freebuff-unified/config.yaml"
+mkdir -p "$H/freebuff-unified/evals"  # manual eval store (gitignored user data)
 
 # ── 4. git pre-commit secret scanner ──
 log "4/7 Installing git pre-commit secret scanner…"
@@ -64,11 +65,17 @@ fi
 
 # ── 5. systemd units ──
 log "5/7 Installing systemd units…"
-for u in freebuff-unified freebuff-proxy freebuff2api freebuff2api-admin aiclient2api; do
+for u in freebuff-unified freebuff-proxy freebuff2api freebuff2api-admin aiclient2api hermes-sidecar lmarena-stealth-proxy owl-agent; do
   f="$BACKUP_DIR/services/systemd/$u.service"
   [[ -f "$f" ]] && sudo install -m 644 "$f" "/etc/systemd/system/$u.service" \
     || warn "no unit for $u in backup — skipping"
 done
+# NOTE: autoclaw-proxy.service intentionally NOT installed (disabled
+# 2026-09-14: 0 accounts, 401 on chat; re-add after Z.ai login).
+# Health-probe bearer file for /health/all + /readyz (read-only key):
+if [[ ! -f /etc/freebuff-unified/probe-env ]]; then
+  warn "create /etc/freebuff-unified/probe-env with FREEBUFF_API_KEY=<first server key> (chmod 644)"
+fi
 if [[ -f "$BACKUP_DIR/services/systemd/agpx-relay.user.service" ]]; then
   mkdir -p "$H/.config/systemd/user"
   cp "$BACKUP_DIR/services/systemd/agpx-relay.user.service" "$H/.config/systemd/user/agpx-relay.service"
