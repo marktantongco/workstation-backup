@@ -45,8 +45,12 @@ fail=0
 checked=0
 while IFS=$'\t' read -r src start bodyfile; do
   checked=$((checked + 1))
-  if ! npx --yes @mermaid-js/mermaid-cli -p "$TMPDIR_LOCAL/puppeteer.json" -i "$bodyfile" -o "$bodyfile.svg" >/dev/null 2>&1; then
+  errlog="$bodyfile.err"
+  if ! npx --yes @mermaid-js/mermaid-cli -p "$TMPDIR_LOCAL/puppeteer.json" -i "$bodyfile" -o "$bodyfile.svg" >"$errlog" 2>&1; then
     echo "MERMAID FAIL: $src (block #$checked, starts at line $start)" >&2
+    echo "--- mmdc error (tail) ---" >&2
+    tail -15 "$errlog" >&2
+    echo "-------------------------" >&2
     fail=1
   fi
 done < "$MANIFEST"
