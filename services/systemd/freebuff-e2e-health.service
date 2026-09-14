@@ -1,0 +1,14 @@
+[Unit]
+Description=Freebuff E2E health check (all free models, both proxies, auto JA3 escalation)
+After=network-online.target freebuff-proxy.service freebuff-unified.service docker.service
+Wants=network-online.target
+
+[Service]
+Type=oneshot
+ExecStart=/opt/freebuff/e2e-health/freebuff-e2e-health.sh
+# Escalation restarts the proxies; give the oneshot generous time.
+TimeoutStartSec=900
+SyslogIdentifier=freebuff-e2e-health
+
+[Install]
+WantedBy=multi-user.target

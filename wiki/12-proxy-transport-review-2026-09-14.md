@@ -70,3 +70,21 @@ All three together, replayed by hand with `/opt`'s own token: **HTTP 200 with a 
 - `projects/freebuff-proxy/internal/freebuff/{chat.go,chat_client_test.go}` + `projects/freebuff-unified/internal/freebuff/client.go` refreshed (diff-verified vs live trees at `fa17740` / `e58a529`).
 - trefeon local mods (CLI-credential auto-import, SSE token-refresh push, dashboard fixes) preserved on branch `local-mods` @ `9e61ef8+`; container-name pin kept via gitignored `docker-compose.override.yml`; rollback image tagged `freebuff-proxy:pre-head-sync`.
 - Wiki note `13-repo-relevance-2026-09-14.md` records the 15-repo landscape verdicts from the github-research pass.
+
+## Addendum (18:15 UTC) — live agent registry backport + daily E2E health check + thermoptic JA3 escalation
+
+**1. Live agent registry (both Go proxies).** Minimal backport of trefeon's `internal/registry`: fetches `FREEBUFF_ROOT_AGENT_ID_BY_MODEL` from `CodebuffAI/freebuff` TS constants (raw.githubusercontent + jsDelivr mirror), resolves literal/alias/object constants (depth-capped like the JS), refreshes every 6h, logs `[agent-registry] refreshed 11 model→agent pairings` at boot. Resolution chain: live map → static snapshot → `base2-free`. New upstream pairings (e.g. mimo's new `base2-free-mimo` root) now arrive without code changes. Commits: freebuff-proxy `17a792d` → main, freebuff-unified `113c8ef` → integrate/main; unified's stale static map (still listing retired minimax/kimi, missing glm) synced. Verified: glm 200 `'REG-OK'` through `:1455`.
+
+**2. Upstream apex redirect (new behavior).** `codebuff.com` now **301s GETs to www.codebuff.com** and **307s POSTs** (method+body preserved). Go clients follow 307 preserving method+body, so both proxies are unaffected (verified live: 200 `'APEX-LIVE-OK'`). Unified already targeted `www.codebuff.com`. The CLI's documented endpoint stays the apex; no config change made.
+
+**3. Daily E2E health check.** `/opt/freebuff/e2e-health/freebuff-e2e-health.sh` (+ `freebuff-e2e-health.service`/`.timer` units, timer at **07:15 UTC daily**, 15 min after the quota reset, `Persistent=true`):
+- Discovers available free models from the trefeon container's `/v1/models` (live registry, no auth; static fallback if down) — solar-pro4 reappeared in discovery after upstream trimmed it, proving the point.
+- Runs one small chat completion per (proxy, model) on `:1455` and `:18080`; classifies `200=OK`, `429=QUOTA`, `403 free_mode_invalid_agent_model=PERM`, `403 other=FINGERPRINT→escalate`, `400=MODEL`, `401=AUTH`, `000=DOWN`.
+- Writes `/var/lib/freebuff-e2e-health/{status.json,health.log}`; exit 0 iff every cell OK/QUOTA.
+
+**4. Thermoptic JA3 escalation.** thermoptic's `proxyrouter` speaks **HTTP CONNECT only** (SOCKS5 rejected); published to host loopback `:31280` via `services/thermoptic/docker-compose.override.yml`. Both Go transports clone `http.DefaultTransport` → `ProxyFromEnvironment` live, so escalation is pure env: on FINGERPRINT the script injects `HTTPS_PROXY=http://127.0.0.1:31280` into `/opt`'s `.env` + unified's `/etc/freebuff-unified/probe-env`, restarts both, re-verifies; success persists (`escalated` state file), failure auto-reverts. Manual revert: `--revert`. Proven end-to-end: SDK-faithful replay through thermoptic passes the gate (400 `No runId found` = body validation, not fingerprint), full health matrix runs clean behind the proxy, revert restores direct egress.
+
+### Backup sync (18:15 UTC)
+
+- `projects/freebuff-proxy/internal/freebuff/{registry.go,registry_test.go,chat.go}`, `projects/freebuff-proxy/internal/app/app.go`, `projects/freebuff-unified/internal/freebuff/{registry.go,registry_test.go,client.go}`, `projects/freebuff-unified/cmd/freebuff/main.go` (diff-verified vs `17a792d` / `113c8ef`).
+- `services/systemd/freebuff-e2e-health.{service,timer}`, `services/e2e-health/freebuff-e2e-health.sh`, `services/thermoptic/docker-compose.override.yml` added.

@@ -1,0 +1,8 @@
+services:
+  proxyrouter:
+    ports:
+      # Loopback publish of thermoptic's Chrome-cloaked HTTP CONNECT egress.
+      # Consumed as HTTPS_PROXY by the freebuff Go proxies during automatic
+      # JA3 escalation (see freebuff-e2e-health). Loopback-only: never expose
+      # an open proxy beyond 127.0.0.1.
+      - "127.0.0.1:31280:3128"

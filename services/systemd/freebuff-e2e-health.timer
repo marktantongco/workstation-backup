@@ -1,0 +1,12 @@
+[Unit]
+Description=Daily freebuff E2E health check (07:15 UTC, after quota reset)
+
+[Timer]
+# Daily at 07:15 UTC (PST is UTC-8 on this box in Sep 2026 → 00:15 local).
+# 15 min after the upstream 07:00 UTC quota reset so the run sees fresh quota.
+OnCalendar=*-*-* 07:15:00 UTC
+RandomizedDelaySec=300
+Persistent=true
+
+[Install]
+WantedBy=timers.target
