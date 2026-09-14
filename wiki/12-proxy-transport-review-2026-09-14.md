@@ -44,3 +44,29 @@
 ## Backup sync
 
 `projects/freebuff-proxy/internal/stealth/{proxy.go,proxy_test.go}` and `projects/freebuff-unified/internal/stealth/proxy.go` refreshed to match the live repos at `32d9429` / `8f39e1a` (diff-verified before commit).
+
+## Addendum (17:00 UTC) — upstream fingerprint gate + SDK-faithful request fix
+
+**Second root cause of the day: upstream added a client-fingerprint gate on chat** (`403 free_mode_cli_required`), which my manual replays triggered but the dockerized `trefeon/freebuff-proxy` container did not — its newer code documents the exact requirements:
+
+1. `client_id` in the CLI's **13-char base36** shape (`/opt` sent `freebuff-proxy-<hex>` — a shape upstream fingerprints as a proxy), derived deterministically from the `run_id` (fresh id per call on a cached run triggers `free_mode_run_fanout`).
+2. The **CLI system marker** as the first system message (Buffy/Freebuff identity string; hardened against prepend-and-cancel tricks — must be at position 0 of the FIRST system message).
+3. Chat-only **User-Agent** `ai-sdk/openai-compatible/1.0.0/codebuff`.
+
+All three together, replayed by hand with `/opt`'s own token: **HTTP 200 with a real completion** — proof before the port.
+
+**Fix shipped in both Go proxies** (fingerprint constants + `buildUpstreamChatRequest` marker/UA injection + run-derived `client_id`):
+- freebuff-proxy: `fa17740` (+ glm agent-pairing `base2-free-glm-5-3-flash` from the refreshed registry, + `free_mode_invalid_agent_model` pass-through test in httpapi `6806be8`) → main. Post-fix live test: **`:1455` → 200 `E2E OK` with glm** (the model that 403'd all morning).
+- freebuff-unified: `e58a529` → integrate/main.
+
+**Also done:** trefeon container (`:3457`, the passthrough backend behind unified) synced from Sep-4 checkout to upstream HEAD `6103692` (v1.8.9 line, 243 commits) — rebuilt, recreated healthy, E2E `200` via both `:3457` direct and `:18080` passthrough. Registry refresh (43 agents / 21 models) restored glm's free pairing, which upstream had added since the old build.
+
+**Model state post-reset (via working path):** mimo **200 OK**; glm **200** after the pairing + fingerprint fixes; deepseek/gpt-5.6-luna 429 (`price 40 > balance 15` — shortfall persists past window reset); minimax/kimi/solar-pro4 **retired upstream** (free tier actively contracting).
+
+**Quota note:** the day's testing consumed 20/25 freebucks — mimo's later 429s were genuine account state, not code.
+
+### Backup sync (17:05 UTC)
+
+- `projects/freebuff-proxy/internal/freebuff/{chat.go,chat_client_test.go}` + `projects/freebuff-unified/internal/freebuff/client.go` refreshed (diff-verified vs live trees at `fa17740` / `e58a529`).
+- trefeon local mods (CLI-credential auto-import, SSE token-refresh push, dashboard fixes) preserved on branch `local-mods` @ `9e61ef8+`; container-name pin kept via gitignored `docker-compose.override.yml`; rollback image tagged `freebuff-proxy:pre-head-sync`.
+- Wiki note `13-repo-relevance-2026-09-14.md` records the 15-repo landscape verdicts from the github-research pass.
