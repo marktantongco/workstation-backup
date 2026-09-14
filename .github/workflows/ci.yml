@@ -3,6 +3,8 @@ name: CI
 on:
   push:
     branches: [master, main]
+    tags: ["v*"]   # tag pushes must match explicitly — a branches-only
+                    # filter silently drops tag events (v2.1.1 lesson)
   pull_request:
 
 jobs:
