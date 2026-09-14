@@ -1,0 +1,28 @@
+# Config with real account credentials — never commit
+config.json
+*.config.json
+
+# Binaries
+/kiro-pool-proxy
+/gen-ca
+/import-local
+*.exe
+*.exe~
+
+# Release artifacts
+/dist/
+
+# Certs (if any legacy)
+certs/
+
+# Runtime logs
+run.log
+run.err
+
+# OS/editor
+.DS_Store
+*.swp
+
+.claude
+.upstream
+

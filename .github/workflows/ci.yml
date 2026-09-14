@@ -31,12 +31,21 @@ jobs:
       - uses: actions/setup-node@v7
         with:
           node-version: 24
-      - name: Cache npx (mermaid-cli + chromium download)
+      - name: Cache npx (mermaid-cli package store)
         uses: actions/cache@v6
         with:
           path: ~/.npm
           key: npm-mermaid-${{ github.run_id }}
           restore-keys: npm-mermaid-
+      - name: Cache puppeteer browser (~/.cache/puppeteer)
+        # Separate from the npm cache: a warm npx store skips puppeteer's
+        # postinstall, so the browser must be cached on its own or mmdc fails
+        # with "Could not find chrome-headless-shell".
+        uses: actions/cache@v6
+        with:
+          path: ~/.cache/puppeteer
+          key: puppeteer-mermaid-${{ github.run_id }}
+          restore-keys: puppeteer-mermaid-
       - name: Render-check every mermaid block
         run: ./tools/check-mermaid.sh
 

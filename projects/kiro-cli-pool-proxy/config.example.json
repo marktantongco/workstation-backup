@@ -1,0 +1,23 @@
+{
+  "listenAddr": "127.0.0.1:8092",
+  "strategy": "smart",
+  "poolKey": "",
+  "adminPassword": "changeme",
+  "apiKeys": [
+    { "id": "bap-kiro", "name": "BlacklistedAIProxy", "key": "kpp-REPLACE_ME", "enabled": true, "createdUnix": 0 }
+  ],
+  "accounts": [
+    {
+      "id": "kiro-main",
+      "email": "REPLACE_ME@example.com",
+      "provider": "Google",
+      "accessToken": "REPLACE_ME",
+      "refreshToken": "REPLACE_ME",
+      "authMethod": "social",
+      "region": "us-east-1",
+      "profileArn": "REPLACE_ME",
+      "expiresAt": 0,
+      "enabled": true
+    }
+  ]
+}

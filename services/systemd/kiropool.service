@@ -1,0 +1,15 @@
+[Unit]
+Description=KiroPool - Kiro multi-account CodeWhisperer pool (Anthropic/OpenAI compatible)
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=simple
+User=x3
+WorkingDirectory=/home/x3/workspace/kiro-cli-pool-proxy
+ExecStart=/home/x3/workspace/kiro-cli-pool-proxy/kiropool -config /home/x3/workspace/kiro-cli-pool-proxy/config.json
+Restart=always
+RestartSec=5
+
+[Install]
+WantedBy=multi-user.target
