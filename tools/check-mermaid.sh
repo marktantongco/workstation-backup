@@ -15,11 +15,21 @@ set -u
 TMPDIR_LOCAL="$(mktemp -d)"
 trap 'rm -rf "$TMPDIR_LOCAL"' EXIT
 MANIFEST="$TMPDIR_LOCAL/manifest.tsv"
-# mmdc renders via bundled Chromium; modern distros disable unprivileged
-# user namespaces, so always render with --no-sandbox (render-only check).
-cat > "$TMPDIR_LOCAL/puppeteer.json" <<'EOF'
+# mmdc renders via a browser. Prefer the system Chrome (GitHub runners
+# preinstall it; also avoids the puppeteer postinstall chicken-and-egg where
+# a warm npm cache suppresses the browser download). Fall back to letting
+# puppeteer manage chrome-headless-shell in ~/.cache/puppeteer.
+CHROME_BIN="$(command -v google-chrome-stable || command -v google-chrome || command -v chromium-browser || command -v chromium || true)"
+if [[ -n "$CHROME_BIN" ]]; then
+  cat > "$TMPDIR_LOCAL/puppeteer.json" <<EOF
+{ "args": ["--no-sandbox", "--disable-setuid-sandbox"], "executablePath": "$CHROME_BIN" }
+EOF
+else
+  npx --yes @puppeteer/browsers install chrome-headless-shell >/dev/null 2>&1 || true
+  cat > "$TMPDIR_LOCAL/puppeteer.json" <<'EOF'
 { "args": ["--no-sandbox", "--disable-setuid-sandbox"] }
 EOF
+fi
 
 files=("$@")
 if [[ ${#files[@]} -eq 0 ]]; then
