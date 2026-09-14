@@ -1,0 +1,226 @@
+#!/usr/bin/env bash
+# opencode-failover — polls configured providers, swaps active default
+# when current returns 5xx / unreachable. Writes status to $STATUS_FILE.
+#
+# Usage:
+#   opencode-failover once        # probe + swap once, exit
+#   opencode-failover loop        # probe every $INTERVAL seconds (forever)
+#   systemctl --user status opencode-failover
+#
+# Reads provider list from $CONFIG_FILE (`provider` block), polls each in
+# order, picks the first that answers 200 on a 1-token chat call, and
+# rewrites `model` + `small_model` to point at it.
+
+set -u
+
+CONFIG_FILE="${CONFIG_FILE:-$HOME/.config/opencode/opencode.json}"
+STATUS_FILE="${STATUS_FILE:-$HOME/.local/share/opencode/failover-status.json}"
+INTERVAL="${INTERVAL:-60}"
+PROBE_MODEL_DEFAULT="${PROBE_MODEL_DEFAULT:-mimo/mimo-v2.5}"
+PROBE_MODEL_SIMPLE="${PROBE_MODEL_SIMPLE:-mimo/mimo-v2.5}"
+PROBE_MODEL_FALLBACKS="${PROBE_MODEL_FALLBACKS:-deepseek/deepseek-v4-flash,z-ai/glm-5.3-flash,deepseek/deepseek-v3}"
+PROBE_PROMPT="${PROBE_PROMPT:-Reply with exactly one word: READY}"
+PROBE_MAXTOK="${PROBE_MAXTOK:-10}"
+PROBE_TIMEOUT="${PROBE_TIMEOUT:-20}"
+
+mkdir -p "$(dirname "$STATUS_FILE")"
+
+# --- helpers --------------------------------------------------------------
+
+current_active() {
+    python3 - <<PY
+import json, sys
+try:
+    with open("$CONFIG_FILE") as f:
+        c = json.load(f)
+    print(c.get("model", ""))
+except Exception:
+    pass
+PY
+}
+
+probe_provider() {
+    local name="$1" base="$2" key="$3" model="$4"
+    local code
+    code=$(curl -s -o /tmp/opencode-failover.tmp -w "%{http_code}" \
+        -m "$PROBE_TIMEOUT" \
+        -H "Authorization: Bearer $key" \
+        -H "Content-Type: application/json" \
+        "$base/chat/completions" \
+        -d "{\"model\":\"$model\",\"messages\":[{\"role\":\"user\",\"content\":\"$PROBE_PROMPT\"}],\"max_tokens\":$PROBE_MAXTOK}" 2>/dev/null || echo "000")
+    case "$code" in
+        200) echo "ok" ;;
+        000) echo "unreachable" ;;
+        401|403) echo "auth:HTTP_$code" ;;
+        429) echo "quota" ;;
+        503|502|504) echo "upstream:HTTP_$code" ;;
+        *) echo "fail:HTTP_$code" ;;
+    esac
+}
+
+# probe_with_fallbacks tries $PROBE_MODEL_DEFAULT first, then iterates
+# PROBE_MODEL_FALLBACKS (comma-separated). Returns "ok" + chosen model on
+# first hit, or "<status>" with the last attempt if all fail.
+probe_with_fallbacks() {
+    local name="$1" base="$2" key="$3"
+    local r last=""
+    # Pick probe models based on provider name to avoid 404s on endpoints
+    # that don't expose Zen-style IDs.
+    local probe_models
+    case "$name" in
+        opencode3)  probe_models="@cf/meta/llama-3.1-8b-instruct-fast" ;;
+        opencode4)  probe_models="qwen2.5:3b" ;;
+        opencode5|x3) probe_models="mimo/mimo-v2.5,$PROBE_MODEL_FALLBACKS" ;;
+        owl)        probe_models="mimo/mimo-v2.5,$PROBE_MODEL_FALLBACKS" ;;
+        *)          probe_models="$PROBE_MODEL_DEFAULT,$PROBE_MODEL_FALLBACKS" ;;
+    esac
+    for m in ${probe_models//,/ }; do
+        r=$(probe_provider "$name" "$base" "$key" "$m")
+        last="$m=$r"
+        if [[ "$r" == "ok" ]]; then
+            echo "ok|$m"
+            return 0
+        fi
+    done
+    echo "no|$last"
+    return 1
+}
+
+list_providers() {
+    python3 - <<PY
+import json
+with open("$CONFIG_FILE") as f:
+    c = json.load(f)
+for name, body in (c.get("provider") or {}).items():
+    opts = body.get("options") or {}
+    print(f"{name}\t{opts.get('baseURL','')}\t{body.get('name','')}")
+PY
+}
+
+resolve_key() {
+    # Expand {env:NAME} → ${NAME}; fall back to literal if no braces.
+    local raw="$1"
+    if [[ "$raw" == \{env:* ]]; then
+        local var="${raw#\{env:}"
+        var="${var%\}}"
+        local val="${!var:-}"
+        if [[ -z "$val" ]]; then
+            # fall back to literal
+            echo ""
+        else
+            echo "$val"
+        fi
+    else
+        echo "$raw"
+    fi
+}
+
+rewrite_active() {
+    local provider="$1" model="$2"
+    python3 - <<PY
+import json
+with open("$CONFIG_FILE") as f: c = json.load(f)
+c["model"] = "$provider/$model"
+c["small_model"] = "$provider/mimo/mimo-v2.5"
+with open("$CONFIG_FILE", "w") as f: json.dump(c, f, indent=2)
+PY
+}
+
+write_status() {
+    local active="$1"; shift
+    local results="$1"; shift
+    local note="$1"; shift
+    python3 - <<PY
+import json
+status = {
+    "active": "$active",
+    "checked_at": "$(date -Iseconds 2>/dev/null || date)",
+    "results": $results,
+    "note": "$note",
+}
+with open("$STATUS_FILE", "w") as f:
+    json.dump(status, f, indent=2)
+PY
+}
+
+probe_one() {
+    local provider="$1"
+    python3 - <<PY
+import json, os
+with open("$CONFIG_FILE") as f: c = json.load(f)
+body = c["provider"]["$provider"]["options"]
+print(body.get("baseURL", ""))
+print(body.get("apiKey", ""))
+PY
+}
+
+# --- main -----------------------------------------------------------------
+
+probe_all() {
+    local active_before
+    active_before=$(current_active)
+    local results_json="{}"
+    local first_ok=""
+    local first_ok_simple=""
+    local first_ok_model=""
+    while IFS=$'\t' read -r p base label; do
+        [[ -z "$p" ]] && continue
+        local key
+        key=$(resolve_key "$(probe_one "$p" | sed -n '2p')")
+        local r
+        if [[ -z "$key" ]]; then
+            r="no-key"
+        else
+            local probe_result
+            probe_result=$(probe_with_fallbacks "$p" "$base" "$key")
+            if [[ "$probe_result" == ok\|* ]]; then
+                r="ok"
+                first_ok_model="${probe_result#ok|}"
+            else
+                r="fail:${probe_result#no|}"
+            fi
+        fi
+        results_json=$(python3 - <<PY
+import json
+r = json.loads('''$results_json''' or "{}")
+r["$p"] = "$r"
+print(json.dumps(r))
+PY
+)
+        if [[ "$r" == "ok" && -z "$first_ok" ]]; then
+            first_ok="$p"
+        fi
+        if [[ "$r" == "ok" && -z "$first_ok_simple" ]]; then
+            first_ok_simple="$p"
+        fi
+    done < <(list_providers)
+
+    local note=""
+    local active="$active_before"
+    if [[ -n "$first_ok" ]]; then
+        if [[ -n "$first_ok_model" && "$first_ok/$first_ok_model" != "$active_before" ]]; then
+            rewrite_active "$first_ok" "$first_ok_model"
+            active="$first_ok/$first_ok_model"
+            note="switched to $first_ok/$first_ok_model"
+        elif [[ -n "$first_ok" && "$first_ok/$PROBE_MODEL_DEFAULT" != "$active_before" ]]; then
+            rewrite_active "$first_ok" "$PROBE_MODEL_DEFAULT"
+            active="$first_ok/$PROBE_MODEL_DEFAULT"
+            note="switched to $first_ok"
+        else
+            note="unchanged"
+        fi
+    else
+        note="no provider answering"
+    fi
+    write_status "$active" "$results_json" "$note"
+}
+
+if [[ "${1:-loop}" == "once" ]]; then
+    probe_all
+    cat "$STATUS_FILE"
+else
+    while true; do
+        probe_all
+        sleep "$INTERVAL"
+    done
+fi

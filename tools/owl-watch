@@ -1,0 +1,138 @@
+#!/usr/bin/env bash
+# owl-watch — auto-sync unified-owl → x1 + root when files change
+#
+# Polling watcher (no inotifywait required). Default interval 30s.
+#
+# Usage:
+#   owl-watch                 # poll every 30s forever
+#   owl-watch --interval 10   # custom interval
+#   owl-watch --once          # one shot, exit after one check
+#   owl-watch --auto-restart  # also call owl-sync --restart when drift detected
+#   owl-watch --verify-only   # just verify, no copy
+#
+# Logs to ~/.local/share/owl-watch.log. PID file at ~/.local/share/owl-watch.pid.
+
+set -uo pipefail
+
+SOURCE_DIR="${SOURCE_DIR:-$HOME/workspace/unified-owl}"
+INTERVAL="${INTERVAL:-30}"
+LOG_FILE="${LOG_FILE:-$HOME/.local/share/owl-watch.log}"
+PID_FILE="${PID_FILE:-$HOME/.local/share/owl-watch.pid}"
+SYNC_BIN="${SYNC_BIN:-$HOME/.local/bin/owl-sync}"
+
+mkdir -p "$(dirname "$LOG_FILE")"
+
+MODE="watch"
+AUTO_RESTART=0
+for arg in "$@"; do
+    case "$arg" in
+        --interval)    shift; INTERVAL="${1:-30}" ;;
+        --once)        MODE="once" ;;
+        --auto-restart) AUTO_RESTART=1 ;;
+        --verify-only) MODE="verify" ;;
+        -h|--help)
+            sed -n '2,18p' "$0" | sed 's/^# \?//'
+            exit 0 ;;
+        *) echo "unknown arg: $arg"; exit 2 ;;
+    esac
+done
+
+echo $$ > "$PID_FILE"
+trap 'rm -f "$PID_FILE"' EXIT
+
+log() { printf '%s [owl-watch] %s\n' "$(date -Iseconds 2>/dev/null || date)" "$*" | tee -a "$LOG_FILE" ; }
+
+[[ -d "$SOURCE_DIR" ]] || { log "FATAL: source missing: $SOURCE_DIR"; exit 1; }
+[[ -x "$SYNC_BIN" ]] || { log "FATAL: owl-sync not executable: $SYNC_BIN"; exit 1; }
+
+log "started: source=$SOURCE_DIR interval=${INTERVAL}s mode=$MODE auto_restart=$AUTO_RESTART pid=$$"
+
+# Snapshot md5s of the 5 canonical files + plugin dir.
+# Output format: "<md5>  <path>" — md5 is what we compare across rows.
+snapshot() {
+    md5sum "$SOURCE_DIR"/owl_server.py "$SOURCE_DIR"/proxy_defense.py "$SOURCE_DIR"/chameleon_ai.py "$SOURCE_DIR"/forward_proxy.py "$SOURCE_DIR"/owl_resilient_mcp.py 2>/dev/null
+    find "$SOURCE_DIR/plugins" -type f -exec md5sum {} \; 2>/dev/null | sort
+}
+
+# md5_target <name> <path> — read md5 of <path> as root, prefixed with <name>.
+# Returns "<name>=<md5>  <path>" or "<name>=missing" if the file is not readable.
+md5_target() {
+    local name="$1" path="$2"
+    if sudo -n test -f "$path" 2>/dev/null; then
+        local m
+        m=$(sudo -n md5sum "$path" 2>/dev/null | awk '{print $1}')
+        echo "$name=$m  $path"
+    else
+        echo "$name=missing  $path"
+    fi
+}
+
+# Three-way snapshot: source + x1 + root, all in one file for easy diff.
+snapshot_three_way() {
+    local f
+    for f in owl_server.py proxy_defense.py chameleon_ai.py forward_proxy.py owl_resilient_mcp.py; do
+        md5sum "$SOURCE_DIR/$f" 2>/dev/null | sed "s|/workspace/unified-owl/|/SOURCE/|"
+        md5_target "x1"   "/home/x1/.owl-agent/$f" | sed "s|/home/x1/.owl-agent/|/x1/|"
+        md5_target "root" "/root/.owl-agent/$f"   | sed "s|/root/.owl-agent/|/root/|"
+    done
+    if [[ -d "$SOURCE_DIR/plugins" ]]; then
+        sudo -n find /home/x1/.owl-agent/plugins -type f -exec md5sum {} \; 2>/dev/null | sed 's|/home/x1/.owl-agent/|/x1/|'
+        sudo -n find /root/.owl-agent/plugins   -type f -exec md5sum {} \; 2>/dev/null | sed 's|/root/.owl-agent/|/root/|'
+    fi
+}
+
+# Diff snapshots, return count of new/changed files
+drift_count() {
+    local cur="$1" prev="$2"
+    if [[ -z "$prev" ]]; then
+        echo "first-run"
+        return 0
+    fi
+    diff "$prev" "$cur" >/dev/null 2>&1 && echo 0 || diff "$prev" "$cur" 2>/dev/null | grep -c '^[<>]'
+}
+
+run_once() {
+    local prev_file="$HOME/.local/share/owl-watch.snapshot"
+    local cur_file="$HOME/.local/share/owl-watch.snapshot.cur"
+
+    snapshot_three_way > "$cur_file"
+
+    # First run: source is fresh, target drift (if any) is pre-existing —
+    # just record baseline so future edits are caught, no sync.
+    if [[ ! -f "$prev_file" ]]; then
+        log "baseline snapshot saved ($(wc -l <"$cur_file" | tr -d ' ') lines)"
+        mv "$cur_file" "$prev_file"
+        return 0
+    fi
+
+    if diff "$prev_file" "$cur_file" >/dev/null 2>&1; then
+        log "no drift ($(wc -l <"$cur_file" | tr -d ' ') lines checked)"
+        mv "$cur_file" "$prev_file"
+        return 0
+    fi
+    local changes
+    changes=$(diff "$prev_file" "$cur_file" 2>/dev/null | grep -c '^[<>]')
+    log "drift detected ($changes changes), running owl-sync"
+
+    if [[ "$MODE" == "verify" ]]; then
+        "$SYNC_BIN" --verify 2>&1 | tail -n 8 | tee -a "$LOG_FILE"
+    else
+        local args=()
+        [[ "$AUTO_RESTART" -eq 1 ]] && args+=(--restart)
+        "$SYNC_BIN" "${args[@]}" 2>&1 | tee -a "$LOG_FILE"
+    fi
+
+    mv "$cur_file" "$prev_file"
+    return 0
+}
+
+if [[ "$MODE" == "once" || "$MODE" == "verify" ]]; then
+    run_once
+    exit $?
+fi
+
+# Default: poll forever
+while true; do
+    run_once
+    sleep "$INTERVAL"
+done

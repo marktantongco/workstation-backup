@@ -98,9 +98,27 @@ while IFS= read -r -d '' ws; do
 done < <(cd "$BACKUP_DIR" && find projects -name pnpm-workspace.yaml -print0 2>/dev/null)
 
 # ── 7. opencode history exporter ──
-log "7/7 Installing opencode-history exporter…"
+log "7/8 Installing opencode-history exporter…"
 mkdir -p "$H/workspace/opencode-history"
 [[ -f "$BACKUP_DIR/tools/export.py" ]] && cp "$BACKUP_DIR/tools/export.py" "$H/workspace/opencode-history/export.py"
+
+# ── 8. ops daemons (failover probe + owl drift watcher) ──
+log "8/8 Installing ops scripts + user units…"
+mkdir -p "$H/.local/bin"
+for s in opencode-failover owl-sync owl-watch; do
+  [[ -f "$BACKUP_DIR/tools/$s" ]] || { warn "no $s in backup — skipping"; continue; }
+  [[ -f "$H/.local/bin/$s" ]] && cp "$H/.local/bin/$s" "$H/.local/bin/$s.bak.$TS"
+  cp "$BACKUP_DIR/tools/$s" "$H/.local/bin/$s"
+  chmod +x "$H/.local/bin/$s"
+done
+mkdir -p "$H/.config/systemd/user"
+for u in opencode-failover owl-watch; do
+  f="$BACKUP_DIR/services/systemd/$u.service"
+  [[ -f "$f" ]] || { warn "no unit for $u in backup — skipping"; continue; }
+  [[ -f "$H/.config/systemd/user/$u.service" ]] && cp "$H/.config/systemd/user/$u.service" "$H/.config/systemd/user/$u.service.bak.$TS"
+  cp "$f" "$H/.config/systemd/user/$u.service"
+done
+systemctl --user daemon-reload 2>/dev/null || true
 
 # ── verification & handoff ──
 log "Scanning installed env for unfilled <REPLACE_ME> placeholders…"

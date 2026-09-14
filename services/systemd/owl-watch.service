@@ -1,0 +1,14 @@
+[Unit]
+Description=Auto-sync unified-owl → x1 + root installs on edit
+After=network.target
+
+[Service]
+Type=simple
+ExecStart=/home/x3/.local/bin/owl-watch --auto-restart
+Restart=on-failure
+RestartSec=10
+StandardOutput=journal
+StandardError=journal
+
+[Install]
+WantedBy=default.target

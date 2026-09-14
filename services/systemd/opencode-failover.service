@@ -1,0 +1,15 @@
+[Unit]
+Description=OpenCode CLI provider failover probe (x3 prod ↔ owl loopback)
+After=network.target
+
+[Service]
+Type=simple
+EnvironmentFile=/home/x3/.config/opencode/agent-env
+ExecStart=/home/x3/.local/bin/opencode-failover loop
+Restart=on-failure
+RestartSec=5
+StandardOutput=journal
+StandardError=journal
+
+[Install]
+WantedBy=default.target
