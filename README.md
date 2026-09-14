@@ -2,6 +2,8 @@
 
 # workstation-backup
 
+[![CI](https://github.com/marktantongco/workstation-backup/actions/workflows/ci.yml/badge.svg)](https://github.com/marktantongco/workstation-backup/actions/workflows/ci.yml)
+
 **Complete-ecosystem backup & one-command restore for the x3 AI workstation.**
 
 One repo that can rebuild the whole rig: opencode configs, agents & skills wiring,
