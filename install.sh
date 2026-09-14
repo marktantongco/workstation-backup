@@ -13,6 +13,9 @@ log()  { printf '\033[1;32m[install]\033[0m %s\n' "$*"; }
 warn() { printf '\033[1;33m[warn]\033[0m %s\n' "$*"; }
 die()  { printf '\033[1;31m[FAIL]\033[0m %s\n' "$*"; exit 1; }
 
+# True only when systemd is PID 1 and usable (containers/chroot: false).
+have_systemd() { command -v systemctl >/dev/null 2>&1 && [[ -d /run/systemd/system ]]; }
+
 [[ "$(id -u)" -eq 0 ]] && die "Run as the regular user (sudo is invoked internally where needed)."
 [[ -d "$BACKUP_DIR/opencode" ]] || die "Run this script from the repo root: ./install.sh"
 
@@ -80,8 +83,12 @@ if [[ -f "$BACKUP_DIR/services/systemd/agpx-relay.user.service" ]]; then
   mkdir -p "$H/.config/systemd/user"
   cp "$BACKUP_DIR/services/systemd/agpx-relay.user.service" "$H/.config/systemd/user/agpx-relay.service"
 fi
-sudo systemctl daemon-reload
-sudo systemctl enable freebuff-unified.service >/dev/null 2>&1 || true
+if have_systemd; then
+  sudo systemctl daemon-reload
+  sudo systemctl enable freebuff-unified.service >/dev/null 2>&1 || true
+else
+  warn "systemd not running — skipping daemon-reload/enable (container or chroot?)"
+fi
 
 # ── 6. project pnpm workspace configs (allowBuilds / overrides) ──
 log "6/7 Installing project pnpm configs…"
@@ -130,7 +137,11 @@ if (( n > 0 )); then
   warn "  sudo systemctl restart freebuff-unified"
 else
   log "env file is filled — restarting freebuff-unified…"
-  sudo systemctl restart freebuff-unified && systemctl is-active freebuff-unified
+  if have_systemd; then
+    sudo systemctl restart freebuff-unified && systemctl is-active freebuff-unified
+  else
+    warn "systemd not running — start freebuff-unified manually after boot"
+  fi
 fi
 
 if command -v opencode >/dev/null 2>&1; then

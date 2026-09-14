@@ -1,0 +1,71 @@
+name: CI
+
+on:
+  push:
+    branches: [master, main]
+  pull_request:
+
+jobs:
+  shellcheck:
+    name: Shellcheck installers + tools
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: bash -n (syntax)
+        run: |
+          for f in install.sh install-unified.sh install-omarchy.sh tools/*.sh; do
+            bash -n "$f"
+          done
+      - name: shellcheck (warnings are errors)
+        run: |
+          shellcheck --severity=warning \
+            install.sh install-unified.sh install-omarchy.sh tools/check-mermaid.sh
+
+  mermaid:
+    name: Mermaid diagrams render
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+      - name: Render-check every mermaid block
+        run: ./tools/check-mermaid.sh
+
+  smoke-arch:
+    name: Container smoke test — Arch (install-omarchy.sh)
+    runs-on: ubuntu-latest
+    container:
+      image: archlinux:latest
+    steps:
+      - name: Install test prerequisites
+        run: |
+          pacman -Syu --noconfirm
+          pacman -S --noconfirm --needed git sudo
+      - uses: actions/checkout@v4
+      - name: Fresh clone + non-root user + full omarchy install
+        run: |
+          useradd -m -s /bin/bash testuser
+          echo "testuser ALL=(ALL) NOPASSWD: ALL" > /etc/sudoers.d/testuser
+          git clone "file://$GITHUB_WORKSPACE" /work
+          cd /work
+          OMARCHY_USER=testuser ./install-omarchy.sh
+
+  smoke-debian:
+    name: Container smoke test — Debian (install-unified.sh)
+    runs-on: ubuntu-latest
+    container:
+      image: debian:bookworm
+    steps:
+      - name: Install test prerequisites
+        run: |
+          apt-get update -qq
+          apt-get install -y -qq sudo git
+      - uses: actions/checkout@v4
+      - name: Fresh clone + non-root user + unified install
+        run: |
+          useradd -m -s /bin/bash testuser
+          echo "testuser ALL=(ALL) NOPASSWD: ALL" > /etc/sudoers.d/testuser
+          git clone "file://$GITHUB_WORKSPACE" /work
+          cd /work
+          su testuser -c "./install-unified.sh"

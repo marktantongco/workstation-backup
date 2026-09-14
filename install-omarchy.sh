@@ -15,7 +15,9 @@
 set -euo pipefail
 
 BACKUP_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-REAL_USER="${SUDO_USER:-$(id -un)}"
+# Target user: SUDO_USER when invoked via sudo; OMARCHY_USER override for
+# root shells / containers; never root itself (stage 5 drops privileges).
+REAL_USER="${OMARCHY_USER:-${SUDO_USER:-}}"
 H="/home/$REAL_USER"
 
 log()  { printf '\033[1;32m[omarchy]\033[0m %s\n' "$*"; }
@@ -23,6 +25,9 @@ warn() { printf '\033[1;33m[warn]\033[0m %s\n' "$*"; }
 die()  { printf '\033[1;31m[FAIL]\033[0m %s\n' "$*"; exit 1; }
 
 [[ "$(id -u)" -eq 0 ]] || die "Run as root: sudo ./install-omarchy.sh"
+[[ -n "$REAL_USER" && "$REAL_USER" != "root" ]] \
+  || die "No target user resolved. Run via sudo (sudo ./install-omarchy.sh), or set one: OMARCHY_USER=<user> ./install-omarchy.sh"
+[[ -d "$H" ]] || die "Home directory $H does not exist — is OMARCHY_USER=$REAL_USER correct?"
 command -v pacman >/dev/null 2>&1 || die "pacman not found — this installer targets Arch/Omarchy only."
 [[ -d "$BACKUP_DIR/opencode" ]] || die "Run this script from the repo root: sudo ./install-omarchy.sh"
 
@@ -30,16 +35,22 @@ command -v pacman >/dev/null 2>&1 || die "pacman not found — this installer ta
 log "1/5 Preparing Omarchy/Arch system…"
 pacman -Syu --noconfirm --needed \
   base-devel git curl wget jq unzip tar \
+  pciutils \
   docker docker-compose \
   go nodejs npm \
   python python-pip python-yaml \
   github-cli >/dev/null
 log "  pacman packages installed/verified"
 
-# pnpm via corepack (ships with nodejs)
-sudo -u "$REAL_USER" corepack enable pnpm 2>/dev/null \
-  || npm install -g pnpm >/dev/null 2>&1 \
-  || warn "pnpm install failed — run: corepack enable pnpm"
+# pnpm via corepack (ships with nodejs). Global enable runs as ROOT (it
+# writes symlink(s) next to the node binary — as user it would fail).
+if ! sudo -u "$REAL_USER" pnpm --version >/dev/null 2>&1; then
+  corepack enable pnpm 2>/dev/null \
+    || npm install -g pnpm >/dev/null 2>&1 \
+    || warn "pnpm install failed — run: corepack enable pnpm"
+  sudo -u "$REAL_USER" pnpm --version >/dev/null 2>&1 \
+    || warn "pnpm still not on PATH for $REAL_USER — check node install"
+fi
 
 # docker: enable + group
 systemctl enable --now docker >/dev/null 2>&1 || warn "docker enable failed"
@@ -87,7 +98,9 @@ chown -R "$REAL_USER:$REAL_USER" "$H/.agents" 2>/dev/null || true
 # ── 5. Full unified install (as the regular user) ──────────────────────────
 log "5/5 Handing off to install-unified.sh (stages 1–11)…"
 chmod +x "$BACKUP_DIR/install.sh" "$BACKUP_DIR/install-unified.sh" 2>/dev/null || true
-sudo -u "$REAL_USER" -E bash "$BACKUP_DIR/install-unified.sh"
+# -H is critical: without it $HOME stays /root and stage 1 writes into the
+# wrong home (container test 2026-09-14 caught exactly this).
+sudo -u "$REAL_USER" -H env "PATH=$PATH" bash "$BACKUP_DIR/install-unified.sh"
 
 log "── omarchy install complete ──"
 log "Post-install checklist:"

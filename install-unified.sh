@@ -20,6 +20,9 @@ log()  { printf '\033[1;32m[unified]\033[0m %s\n' "$*"; }
 warn() { printf '\033[1;33m[warn]\033[0m %s\n' "$*"; }
 die()  { printf '\033[1;31m[FAIL]\033[0m %s\n' "$*"; exit 1; }
 
+# True only when systemd is PID 1 and usable (containers/chroot: false).
+have_systemd() { command -v systemctl >/dev/null 2>&1 && [[ -d /run/systemd/system ]]; }
+
 [[ "$(id -u)" -eq 0 ]] && die "Run as the regular user (sudo is invoked internally where needed)."
 [[ -d "$BACKUP_DIR/opencode" ]] || die "Run this script from the repo root: ./install-unified.sh"
 
@@ -38,9 +41,14 @@ for u in freebuff-e2e-health.service freebuff-e2e-health.timer; do
     && sudo install -m 644 "$BACKUP_DIR/services/systemd/$u" "/etc/systemd/system/$u" \
     || warn "no $u in backup — skipping"
 done
-sudo systemctl daemon-reload
-sudo systemctl enable --now freebuff-e2e-health.timer >/dev/null 2>&1 || true
-systemctl list-timers freebuff-e2e-health.timer --no-pager | tail -n +1 | head -3 || true
+if have_systemd; then
+  sudo systemctl daemon-reload
+  sudo systemctl enable --now freebuff-e2e-health.timer >/dev/null 2>&1 || true
+  systemctl list-timers freebuff-e2e-health.timer --no-pager 2>/dev/null | head -3 || true
+else
+  warn "systemd not running — units installed; enable after boot:"
+  warn "  sudo systemctl daemon-reload && sudo systemctl enable --now freebuff-e2e-health.timer"
+fi
 warn "health check reads live keys from /opt/freebuff/go/freebuff-proxy/.env and"
 warn "  /home/$USER/freebuff-unified/config.yaml — restore those on the target host"
 warn "  (or run the check manually once: sudo /opt/freebuff/e2e-health/freebuff-e2e-health.sh)"
@@ -72,14 +80,25 @@ fi
 
 # ── Stage 11: Go proxy source restore + optional rebuild ───────────────────
 log "11/11 Restoring Go proxy sources…"
-restore_tree() {  # restore_tree <src-in-backup> <dst-dir> <owner-spec-cmd>
+restore_tree() {  # restore_tree <src-in-backup> <dst-dir>
   local src="$1" dst="$2"
   [[ -d "$dst" ]] || { warn "target $dst absent — skipping $(basename "$src")"; return 0; }
+  # Container test 2026-09-14: the cd must NOT leak assumptions — find emits
+  # ./relative paths, so resolve sources against $src explicitly and pick
+  # privilege per destination (sudo only where the user cannot write).
+  local use_sudo=no
+  [[ -w "$dst" ]] || use_sudo=yes
+  local count=0 rel
   while IFS= read -r -d '' f; do
-    rel="${f#"$src"/}"
-    sudo install -D -m 644 "$f" "$dst/$rel"
+    rel="${f#./}"
+    if [[ "$use_sudo" == yes ]]; then
+      sudo install -D -m 644 "$src/$rel" "$dst/$rel"
+    else
+      install -D -m 644 "$src/$rel" "$dst/$rel"
+    fi
+    count=$((count + 1))
   done < <(cd "$src" && find . -type f -print0)
-  log "  restored $(cd "$src" && find . -type f | wc -l) files into $dst"
+  log "  restored $count files into $dst"
 }
 
 OWNER_PROXY="$(stat -c '%U:%G' /opt/freebuff/go/freebuff-proxy 2>/dev/null || true)"
@@ -94,12 +113,20 @@ if command -v go >/dev/null 2>&1; then
   if [[ -d /opt/freebuff/go/freebuff-proxy ]]; then
     ( cd /opt/freebuff/go/freebuff-proxy && sudo -E env PATH="$PATH" go build -o bin/freebuff-proxy ./cmd/freebuff-proxy ) \
       && log "  freebuff-proxy built" || warn "freebuff-proxy build failed"
-    sudo systemctl restart freebuff-proxy && systemctl is-active freebuff-proxy
+    if have_systemd; then
+      sudo systemctl restart freebuff-proxy && systemctl is-active freebuff-proxy
+    else
+      warn "systemd not running — start freebuff-proxy manually after boot"
+    fi
   fi
   if [[ -f "$H/freebuff-unified/go.mod" ]]; then
     ( cd "$H/freebuff-unified" && go build -o bin/freebuff-unified ./cmd/freebuff ) \
       && log "  freebuff-unified built" || warn "freebuff-unified build failed"
-    sudo systemctl restart freebuff-unified && systemctl is-active freebuff-unified
+    if have_systemd; then
+      sudo systemctl restart freebuff-unified && systemctl is-active freebuff-unified
+    else
+      warn "systemd not running — start freebuff-unified manually after boot"
+    fi
   fi
 else
   warn "Go toolchain not found — sources restored but not rebuilt (install go ≥ 1.26, then rebuild)"
@@ -108,11 +135,17 @@ fi
 # ── Verification & handoff ─────────────────────────────────────────────────
 log "── unified restore summary ──"
 for s in freebuff-proxy freebuff-unified; do
-  systemctl is-active "$s" >/dev/null 2>&1 && log "  $s: active" || warn "  $s: not active"
+  if have_systemd; then
+    systemctl is-active "$s" >/dev/null 2>&1 && log "  $s: active" || warn "  $s: not active"
+  else
+    warn "  $s: systemd not running — verify after boot"
+  fi
 done
-systemctl is-enabled freebuff-e2e-health.timer >/dev/null 2>&1 \
-  && log "  freebuff-e2e-health.timer: enabled ($(systemctl list-timers freebuff-e2e-health.timer --no-pager | sed -n 2p | awk '{print $1, $2}'))" \
-  || warn "  freebuff-e2e-health.timer: not enabled"
+if have_systemd; then
+  systemctl is-enabled freebuff-e2e-health.timer >/dev/null 2>&1 \
+    && log "  freebuff-e2e-health.timer: enabled ($(systemctl list-timers freebuff-e2e-health.timer --no-pager 2>/dev/null | sed -n 2p | awk '{print $1, $2}'))" \
+    || warn "  freebuff-e2e-health.timer: not enabled"
+fi
 log "Manual escalation controls:"
 log "  sudo /opt/freebuff/e2e-health/freebuff-e2e-health.sh           # run health check now"
 log "  sudo /opt/freebuff/e2e-health/freebuff-e2e-health.sh --revert  # back to direct egress"
