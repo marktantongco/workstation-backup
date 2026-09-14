@@ -231,15 +231,22 @@ func (s *Server) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 
 		// Rewrite profileArn in the body for this account.
 		newBody := RewriteProfileArn(body, account.ProfileArn)
-		if isChat && account.AuthMethod == "api_key" {
-			// ksk keys have no profileArn; the CodeWhisperer data-plane rejects
-			// a stray one, so strip whatever the client sent.
+		if isChat && (account.AuthMethod == "api_key" || account.ProfileArn == "") {
+			// ksk keys and Builder ID accounts (pre-resolution) have no
+			// profileArn: strip whatever the client sent — a foreign/suspended
+			// account's ARN makes the data-plane reject the bearer with 403,
+			// and a placeholder makes it 400.
 			newBody = RemoveProfileArn(newBody)
 		}
 
 		// RE/debug: dump the (pre-swap) chat request body once.
 		if dbg := os.Getenv("KPP_DEBUG_BODY"); dbg != "" && isChat {
 			_ = os.WriteFile(dbg, body, 0600)
+		}
+		// RE/debug: dump the final (post-rewrite) body + incoming headers.
+		if dbg := os.Getenv("KPP_DEBUG_FINAL"); dbg != "" && isChat {
+			hdr, _ := json.Marshal(r.Header)
+			_ = os.WriteFile(dbg, append(append([]byte("HEADERS: "), hdr...), append([]byte("\nBODY: "), newBody...)...), 0600)
 		}
 
 		// Resolve region + upstream host.

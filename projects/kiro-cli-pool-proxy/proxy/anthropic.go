@@ -585,9 +585,10 @@ func (s *Server) dispatchKiro(r *http.Request, body []byte, stickyKey string) (*
 
 		isAPIKey := account.AuthMethod == "api_key"
 		newBody := RewriteProfileArn(body, account.ProfileArn)
-		if isAPIKey {
-			// ksk keys carry no profileArn; strip the translation placeholder
-			// so the CodeWhisperer data-plane does not reject the request.
+		if isAPIKey || account.ProfileArn == "" {
+			// ksk keys and Builder ID accounts (before profileArn resolution)
+			// have no profileArn; the CodeWhisperer data-plane rejects a stray
+			// "PLACEHOLDER" member with 400 "Improperly formed request".
 			newBody = RemoveProfileArn(newBody)
 		}
 		region := RegionFromProfileArn(account.ProfileArn)
