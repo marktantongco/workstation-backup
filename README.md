@@ -33,7 +33,7 @@ fix, and decision since 2026-09-11.
 | Path | Command | What you get |
 |---|---|---|
 | **Any Linux + systemd** | `./install.sh` | The classic 8-stage restore (configs → env templates → gateway → scanner → units → pnpm → exporter → ops daemons) |
-| **Complete restore incl. health check + escalation** | `./install-unified.sh` | Everything in `install.sh` **plus** the E2E health check, thermoptic escalation wiring, and Go-proxy source restore/build |
+| **Complete restore incl. health check + escalation** | `./install-unified.sh` | Everything in `install.sh` **plus** the E2E health check, thermoptic escalation wiring, Go-proxy source restore/build, and a post-restore smoke check (stage 12) |
 | **Fresh Omarchy (Arch) machine** | `sudo ./install-omarchy.sh` | System prep (packages, docker, Go, Node, NVIDIA optional) → skills → then the full unified install |
 
 All installers are idempotent: existing files are backed up with a timestamp
@@ -66,7 +66,8 @@ workstation-backup/
 
 | Version | Date | Commit | Changes |
 |---|---|---|---|
-| **v2.0.0** | 2026-09-14 | *this release* | Comprehensive README; **`install-unified.sh`** (complete unified installer with E2E health + JA3 escalation + proxy sources); **`install-omarchy.sh`** (Omarchy/Arch variant) |
+| **v2.1.0** | 2026-09-14 | *this release* | **CI on every push** (shellcheck + mermaid render check + Arch/Debian container smoke tests of both installers); container-test fixes (`sudo -H` handoff, `restore_tree` source resolution, systemd guards, root corepack, `pciutils`); Node 24 action targets (checkout v7, setup-node v7); **stage-12 post-restore smoke check** in `install-unified.sh` (curl both proxies, advisory) |
+| v2.0.0 | 2026-09-14 | `aa21302` | Comprehensive README; **`install-unified.sh`** (complete unified installer with E2E health + JA3 escalation + proxy sources); **`install-omarchy.sh`** (Omarchy/Arch variant) |
 | v1.4.0 | 2026-09-14 | `167a6c1` | Live agent-pairing registry backport to both Go proxies (`17a792d`/`113c8ef`); daily E2E health check + thermoptic JA3 escalation; thermoptic `:31280` loopback publish |
 | v1.3.0 | 2026-09-14 | `2243ece` | Fingerprint-fix sources synced; 15-repo relevance verdicts (`15baf13`); stealth spike record (`2332af6`); gateway config/units/installer synced to live (`2243ece`); ops daemons backed up (`5c77130`) |
 | v1.2.0 | 2026-09-14 | `c7e06a8` | Transport hardening snapshot (`786ba19`); review fixes (`9d8ee9d`); IPv6 bracketed-endpoint fix (`de36c3b`); glm 403 root cause → honest `free_mode_invalid_agent_model` mapping (`c7e06a8`) |

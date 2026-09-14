@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# install-unified.sh — COMPLETE workstation restore (v2.0).
+# install-unified.sh — COMPLETE workstation restore (v2.1).
 #
 # Stages 1–8: delegates to ./install.sh (opencode configs → env templates →
 #             gateway config → secret scanner → systemd units → pnpm configs →
@@ -7,6 +7,7 @@
 # Stage  9  : daily E2E health check (script + systemd service/timer, 07:15 UTC).
 # Stage 10  : thermoptic JA3 escalation wiring (loopback :31280 publish).
 # Stage 11  : Go proxy source restore + optional rebuild/restart.
+# Stage 12  : post-restore smoke check (curl both proxies; advisory only).
 #
 # Idempotent: safe to re-run; existing files are timestamp-backed up.
 # Run as the regular user (sudo is invoked internally where needed).
@@ -27,11 +28,12 @@ have_systemd() { command -v systemctl >/dev/null 2>&1 && [[ -d /run/systemd/syst
 [[ -d "$BACKUP_DIR/opencode" ]] || die "Run this script from the repo root: ./install-unified.sh"
 
 # ── Stages 1–8: classic installer ──────────────────────────────────────────
-log "Stages 1–8: running classic installer (configs, env, units, ops)…"
+log "Stages 1–8: running classic installer (configs, env, units, ops)"
+log "9/12–12/12: health check · thermoptic escalation · proxy sources · smoke check"
 bash "$BACKUP_DIR/install.sh"
 
 # ── Stage 9: daily E2E health check ────────────────────────────────────────
-log "9/11 Installing daily E2E health check…"
+log "9/12 Installing daily E2E health check…"
 sudo install -d -m 755 /opt/freebuff/e2e-health
 sudo install -m 755 "$BACKUP_DIR/services/e2e-health/freebuff-e2e-health.sh" \
   /opt/freebuff/e2e-health/freebuff-e2e-health.sh
@@ -54,7 +56,7 @@ warn "  /home/$USER/freebuff-unified/config.yaml — restore those on the target
 warn "  (or run the check manually once: sudo /opt/freebuff/e2e-health/freebuff-e2e-health.sh)"
 
 # ── Stage 10: thermoptic JA3 escalation wiring ─────────────────────────────
-log "10/11 Wiring thermoptic escalation (loopback :31280)…"
+log "10/12 Wiring thermoptic escalation (loopback :31280)…"
 THERMO_DIR="$H/workspace/thermoptic"
 if [[ -f "$THERMO_DIR/docker-compose.yml" ]]; then
   if [[ ! -f "$THERMO_DIR/docker-compose.override.yml" ]]; then
@@ -79,7 +81,7 @@ else
 fi
 
 # ── Stage 11: Go proxy source restore + optional rebuild ───────────────────
-log "11/11 Restoring Go proxy sources…"
+log "11/12 Restoring Go proxy sources…"
 restore_tree() {  # restore_tree <src-in-backup> <dst-dir>
   local src="$1" dst="$2"
   [[ -d "$dst" ]] || { warn "target $dst absent — skipping $(basename "$src")"; return 0; }
@@ -146,6 +148,41 @@ if have_systemd; then
     && log "  freebuff-e2e-health.timer: enabled ($(systemctl list-timers freebuff-e2e-health.timer --no-pager 2>/dev/null | sed -n 2p | awk '{print $1, $2}'))" \
     || warn "  freebuff-e2e-health.timer: not enabled"
 fi
+
+# ── Stage 12: post-restore smoke check ─────────────────────────────────────
+# Advisory only: a fresh restore normally hits upstream quota (429), so any
+# authenticated response proves the transport; this stage never fails the install.
+log "12/12 Post-restore smoke check (curl both proxies)…"
+PK=$(grep '^FREEBUFF_PROXY_API_KEY=' /opt/freebuff/go/freebuff-proxy/.env 2>/dev/null | sed 's/^FREEBUFF_PROXY_API_KEY=//' || true)
+GK=$(python3 -c "import yaml
+try:
+    d = yaml.safe_load(open('$H/freebuff-unified/config.yaml'))
+    keys = (d.get('server') or {}).get('api_keys') or (d.get('auth') or {}).get('api_keys') or []
+    print(keys[0] if keys else '')
+except Exception:
+    pass" 2>/dev/null || true)
+smoke() {  # smoke <service> <base-url> <key>
+  local svc="$1" url="$2" key="$3" code
+  if have_systemd && ! systemctl is-active --quiet "$svc"; then
+    warn "  $svc: not active — skipping smoke check"
+    return 0
+  fi
+  if [[ -z "$key" ]]; then
+    warn "  $svc: no API key found — skipping smoke check"
+    return 0
+  fi
+  code=$(curl -sS -m 30 -o /dev/null -w '%{http_code}' -X POST "$url/v1/chat/completions" \
+    -H "Authorization: Bearer $key" -H "Content-Type: application/json" \
+    -d '{"model":"z-ai/glm-5.3-flash","messages":[{"role":"user","content":"Reply with exactly: RESTORE-OK"}],"max_tokens":40}' 2>/dev/null) || code=000
+  case "$code" in
+    200) log "  $svc: HTTP 200 — full completion OK" ;;
+    429) warn "  $svc: HTTP 429 — transport OK, upstream quota exhausted (normal on a fresh restore)" ;;
+    000) warn "  $svc: no response — service reachable? check: journalctl -u $svc" ;;
+    *)   warn "  $svc: HTTP $code — details: journalctl -u $svc" ;;
+  esac
+}
+smoke freebuff-proxy "http://127.0.0.1:1455" "$PK"
+smoke freebuff-unified "http://127.0.0.1:18080" "$GK"
 log "Manual escalation controls:"
 log "  sudo /opt/freebuff/e2e-health/freebuff-e2e-health.sh           # run health check now"
 log "  sudo /opt/freebuff/e2e-health/freebuff-e2e-health.sh --revert  # back to direct egress"
