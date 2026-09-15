@@ -38,8 +38,8 @@
 | 9091 | freebuff-unified dashboard | 127.0.0.1 | HTTP | Pinned to loopback 2026-09-16 (was `*:9091`) |
 | 9092 | Prometheus (owl stack, host proc) | 127.0.0.1 | HTTP | Active; wiki previously mislabeled this slot as Grafana alt |
 | 9093 | python3 service (identity unverified) | 127.0.0.1 | HTTP | Active; loopback |
-| 9094 | OWL (docker) | 0.0.0.0 | HTTP | Active |
-| 9095 | OWL Prometheus (docker, maps to container :9090) | 0.0.0.0 | HTTP | Active |
+| 9094 | OWL owl-api metrics (docker) | 127.0.0.1 | HTTP | Pinned to loopback 2026-09-16 |
+| 9095 | OWL Prometheus (docker, maps to container :9090) | 127.0.0.1 | HTTP | Pinned to loopback 2026-09-16 |
 | 9222 | Deno CDP | 127.0.0.1 | HTTP | Active |
 
 ## Reserved for Future
