@@ -1,47 +1,61 @@
 # 08 — Service Inventory
 
-## Docker Containers
+> Refreshed **2026-09-15** after the proxy-consolidation cleanup (see `12-proxy-transport-review-2026-09-14.md` and the 2026-09-15 session record). Every survivor has 24h traffic evidence or an active-session owner.
+
+## Production chain (verified live traffic)
+
+```
+clients ──► freebuff-unified :18080 (auth + rate-limit, passthrough)
+              └──► freebuff-proxy-trefeon :3457 (Go pool/sessions/quota + admin UI, en-patch baked in)
+                     └──► codebuff.com
+```
+
+## Docker Containers (live)
 
 | Container | Image | Port | Status | Purpose |
 |-----------|-------|------|--------|---------|
-| thermoptic-thermoptic-1 | thermoptic | :1234 | Up | Chrome MITM proxy (Stealth) |
-| thermoptic-chrome-1 | chrome | :14111 | Up | Headless Chrome for MITM |
-| thermoptic-proxyrouter-1 | proxyrouter | — | Up | Proxy routing for Thermoptic |
-| phantomsignal | phantomsignal | :5000 | Up (healthy) | Rotating residential proxy pool |
-| obsidian-khoj | khoj | — | Up | AI search over Obsidian vault |
-| obsidian-anythingllm | anythingllm | — | Up (healthy) | Local LLM workspace |
-| obsidian-qdrant | qdrant | :6333/:6334 | Up | Vector database |
-| obsidian-khoj-db | postgres | — | Up | Khoj PostgreSQL backend |
-| freebuff-proxy-trefeon | freebuff-proxy | — | Up (healthy) | Freebuff Trefeon proxy |
-| image-gen | image-gen | — | Up | Image generation service |
-| codex-proxy | codex-proxy | — | Up (healthy) | Codex API proxy |
-| chatgpt2api | chatgpt2api | — | Up | ChatGPT → OpenAI API |
-| new-api | new-api | — | Up | New API gateway |
-| freebuff-proxy | freebuff-proxy | — | Up (healthy) | Freebuff proxy |
-| owl-api | owl-api | :3457 | Up (healthy) | OWL API |
-| owl-prometheus | prometheus | :9091 | Up (healthy) | OWL Prometheus metrics |
-| owl-gateway | owl-gateway | — | Up (healthy) | OWL gateway |
-| headroom-default | headroom | :8091 | Up (healthy) | Context compression |
-| stepup-ai-gateway | stepup-ai-gateway | :8787 | Up (healthy) | Unified AI gateway |
+| freebuff-proxy-trefeon | freebuff-proxy:latest | 0.0.0.0:3457 | Up (healthy) | **Production Freebuff proxy** (pool/sessions/quota + admin dashboard; EN UI patch v0.6.2 baked into image) |
+| thermoptic-thermoptic-1 | thermoptic-thermoptic | 127.0.0.1:1234 | Up | Chrome MITM proxy (Stealth) |
+| thermoptic-chrome-1 | thermoptic-chrome | 127.0.0.1:14111 | Up | Headless Chrome for MITM |
+| thermoptic-proxyrouter-1 | thermoptic-proxyrouter | 127.0.0.1:31280 | Up | Proxy routing for Thermoptic |
+| phantomsignal | phantomsignal | 0.0.0.0:5000 | Up (healthy) | Rotating residential proxy pool |
+| turnstile-solver | turnstile-solver | 0.0.0.0:8088 | Up (healthy) | Turnstile CAPTCHA solver |
+| obsidian-khoj | khoj | 0.0.0.0:42110 | Up | AI search over Obsidian vault |
+| obsidian-anythingllm | anythingllm | 0.0.0.0:3002 | Up (healthy) | Local LLM workspace |
+| obsidian-qdrant | qdrant | 0.0.0.0:6333/:6334 | Up (healthy) | Vector database |
+| obsidian-khoj-db | pgvector | (internal) | Up (healthy) | Khoj PostgreSQL backend |
+| new-api | calciumion/new-api | 0.0.0.0:23001 | Up | New API gateway |
+| image-gen | image-gen | 0.0.0.0:28088 | Up | Image generation service |
+| owl-api | owl-dns-synergy-api-server | 0.0.0.0:60001, 0.0.0.0:9094 | Up (healthy) | OWL API |
+| owl-prometheus | prom/prometheus | 0.0.0.0:9095 | Up (healthy) | OWL Prometheus metrics |
+| owl-gateway | owl-dns-synergy-gateway | 0.0.0.0:60010 | Up (healthy) | OWL gateway |
+| headroom-default | headroom | (none published) | Up (healthy) | Context compression |
+
+**Removed 2026-09-15** (evidence-backed, recoverable from notes below):
+`freebuff-proxy` (ghcr.io/hengxin666 — unhealthy 2 days, EACCES crash-loop, no ports; data dir bind-mount at `/home/x3/aiworkspace/freebuff-proxy/data/` preserved on disk), `codex-proxy`, `chatgpt2api`, `stepup-ai-gateway`, `obsidian-orchestrator`, `owl-dns-tunnel` + stray exited containers (pruned).
 
 ## Systemd Services (Custom)
 
-| Service | Port | Description |
-|---------|------|-------------|
-| aiclient2api.service | :3002 | AIClient2API — Kiro/Antigravity/Grok/Codex unified OpenAI-compatible hub |
-| autoclaw-proxy.service | :31000 | AutoClaw GLM OpenAI-compatible proxy |
-| blacklisted-api.service | :3001/:3101 | BlacklistedAIProxy multi-provider gateway |
-| cdp-proxy-interceptor.service | :1455/:1457 | CDP Proxy Interceptor (Deno MITM for Playwright/Puppeteer) |
-| freebuff-proxy.service | — | Freebuff Proxy (Go/Fiber + Stealth) |
-| freebuff-unified.service | — | Freebuff Unified API Gateway |
-| freebuff2api.service | — | Freebuff2API Gateway (Python/FastAPI) |
-| freebuff2api-admin.service | — | Freebuff2API Admin Panel |
-| hermes-sidecar.service | — | Hermes Stealth Sidecar (@kori_xyz/hermes) |
-| kiroproxy.service | :3103/:3113 | KiroProxy — Kiro multi-account OpenAI/Anthropic/Gemini gateway |
-| lemonade-server.service | — | Lemonade Server |
-| owl-agent.service | — | OWL Agent |
-| owl-dns-synergy.service | — | OWL DNS Synergy |
-| owl-port-guardian.service | — | OWL Port Guardian |
+| Service | Port | Status | Description |
+|---------|------|--------|-------------|
+| freebuff-unified.service | :18080 | active | Freebuff Unified API Gateway — production front door (auth/rate-limit) |
+| blacklisted-api.service | :3005 | active | BlacklistedAIProxy multi-provider gateway (9.4k req/24h) |
+| grokbuild-proxy.service | :8080 | active | GrokBuild proxy (108 req/24h) |
+| nim-relay (codex-nvidia-proxy) | :15721 | active | NVIDIA NIM relay |
+| kiropool.service | :8092 | active | Kiro CLI pool proxy |
+| cdp-proxy-interceptor.service | :9222 | active | Deno CDP MITM hook for Playwright sessions (idle; revisit if unused a week) |
+| freebuff-proxy.service | — | **disabled** | Was crash-looping on the :3457 port conflict with the container long before 2026-09-15; container is the canonical serving instance |
+| freebuff2api.service | :8000/:8001 | **disabled** | Zero requests in 24h; superseded by the trefeon Go proxy |
+| freebuff2api-admin.service | — | **disabled** | Companion admin panel (same evidence) |
+| hermes-sidecar.service | :3101 | **disabled** | Zero traffic in 24h; stealth transport off in config |
+| lmarena-stealth-proxy.service | :3103 | **disabled** | Zero traffic in 24h (journal "3101/3103" hits were timestamp false-positives) |
+| aiclient2api.service | :3002 | see live state | AIClient2API hub |
+| autoclaw-proxy.service | :31000 | see live state | AutoClaw GLM proxy |
+| kiroproxy.service | :3103/:3113 | see live state | KiroProxy gateway |
+| lemonade-server.service | — | see live state | Lemonade Server |
+| owl-agent.service | — | active | OWL Agent (Prometheus+Grafana monitoring, 206 MB) |
+| owl-dns-synergy.service | — | see live state | OWL DNS Synergy |
+| owl-port-guardian.service | — | see live state | OWL Port Guardian |
 
 ## OpenCode Providers
 
@@ -51,7 +65,7 @@
 | opencode-go | remote | `{env:OPENCODE_GO_UKAJ}` | qwen3-coder-plus |
 | cloudflare | Cloudflare Workers | `{env:CLOUDFLARE_*}` | gemini-3-flash-preview |
 | ollama | http://127.0.0.1:11434 | local | qwen2.5:3b, deepseek-r1:1.5b, heretic-qwen3-0.6b, gemma4:e2b |
-| blacklisted | http://127.0.0.1:3001 | local | gemini-3-flash-preview, claude-opus-4-5, qwen3-coder-plus, grok-4.6 |
+| blacklisted | http://127.0.0.1:3005 | local | gemini-3-flash-preview, claude-opus-4-5, qwen3-coder-plus, grok-4.6 |
 
 ## MCP Servers
 
@@ -59,64 +73,22 @@
 |--------|-----------|--------------|
 | caveman | stdio | Compressed communication modes |
 | headroom | stdio | Context compression/retrieval |
-| github | http ({env:GITHUB_PAT}) | 26 tools: repos, issues, PRs, code search |
+| github | http ({env:GITHUB_PAT}) | 26 tools: repos, issues, PRs, code search (enabled 2026-09-13) |
 | octocode | stdio | Code research, GitHub search |
 | parallel-search | stdio | Web search + fetch |
 | graphify | stdio | Knowledge graph, PR impact |
-| serena | stdio (uvx) | Code analysis |
-| skillspector | stdio (venv) | Skill lint |
-| ruv-swarm | stdio (npx) | Swarm orchestration |
-| filesystem | stdio | File I/O |
-| memory | stdio | Persistent memory |
+| serena | stdio (uvx) | Code analysis (disabled) |
+| skillspector | stdio (venv) | Skill lint (disabled) |
+| ruv-swarm | stdio (npx) | Swarm orchestration (disabled) |
+| filesystem | stdio | File I/O (disabled) |
+| memory | stdio | Persistent memory (disabled) |
 
-## Skills (40 Production)
+## Skills
 
-| Zone | Skills |
-|------|--------|
-| activate | brainstorming, dispatching-parallel-agents, executing-plans, finishing-a-development-branch, receiving-code-review, requesting-code-review, subagent-driven-development, systematic-debugging, test-driven-development, using-git-worktrees, using-superpowers, verification-before-completion, writing-plans, writing-skills |
-| build | scaffold-cli, scaffold-nextjs, codebase-architecture, ui-design, ui-animation, typography-audit, ax-audit, dx-audit, product-design, presentation-creator, copywriting, docs-writing, readme-creator, optimise-seo, seo-program |
-| validate | pr-reviewer, pr-creator, pr-babysitter, tidy |
-| playbook | autoresearch, canvas, defuddle, document-findings, evaluate-candidates, find-alternatives, search-ai-tools, search-repos |
-| monetize | autoship |
-| system | agent-skills-creator, agents-md, customize-opencode, save, save-md, think, wiki, wiki-cli, wiki-fold, wiki-ingest, wiki-lint, wiki-mode, wiki-query, wiki-retrieve |
+**Production (40)**: marktantongco/ai-agent-skills v24.0.0 at `~/.agents/skills/`, symlinked to `~/.claude/skills/` and `~/.opencode/skills`. Zones: activate, build, validate, playbook, monetize, system. Catalog: `~/.agents/SKILLS.md` (mirrored in `agents/SKILLS.md` in this repo).
 
-## Listening Ports (61 Total)
+**External (6, installed 2026-09-15 via skills.sh)**: find-skills (vercel-labs/skills), github-research (lingzhi227), parallel-web (k-dense-ai/scientific-skills), parallel-deep-research + parallel-web-search (parallel-web/parallel-agent-skills), deep-researcher (zenobi-us/dotfiles).
 
-| Port | Service | Bind | Protocol |
-|------|---------|------|----------|
-| 1455 | CDP Proxy | 127.0.0.1 | HTTP |
-| 1457 | CDP Proxy | 0.0.0.0 | HTTP |
-| 1234 | Thermoptic | 127.0.0.1 | HTTPS |
-| 14111 | Chrome | 127.0.0.1 | HTTP |
-| 2019 | Headroom | 127.0.0.1 | HTTP |
-| 3000 | Grafana | * | HTTP |
-| 3001 | BlacklistedAIProxy | 0.0.0.0 | HTTP |
-| 3002 | AIClient2API | 0.0.0.0 | HTTP |
-| 3030 | OpenCode | * | HTTP |
-| 3100 | AIClient2API (master) | * | HTTP |
-| 3101 | BlacklistedAIProxy (master) | 127.0.0.1 | HTTP |
-| 3103 | KiroProxy | * | HTTP |
-| 3113 | KiroProxy (master) | 127.0.0.1 | HTTP |
-| 3200 | KiroProxy (alt) | 0.0.0.0 | HTTP |
-| 3457 | OWL API | 0.0.0.0 | HTTP |
-| 5000 | PhantomSignal | 0.0.0.0 | HTTP |
-| 6333 | Qdrant | 0.0.0.0 | HTTP |
-| 6334 | Qdrant (gRPC) | 0.0.0.0 | gRPC |
-| 7897 | AGPX-Relay | 0.0.0.0 | HTTP |
-| 8000 | Autoclaw | 127.0.0.1 | HTTP |
-| 8001 | Autoclaw (alt) | 127.0.0.1 | HTTP |
-| 8080 | KiroProxy / grokbuild | * | HTTP |
-| 8081 | Thermoptic | 0.0.0.0 | HTTP |
-| 8091 | Headroom | 127.0.0.1 | HTTP |
-| 8443 | Thermoptic (TLS) | * | HTTPS |
-| 8648 | OWL | 0.0.0.0 | HTTP |
-| 8787 | Freebuff | 127.0.0.1 | HTTP |
-| 8788 | Freebuff (alt) | 0.0.0.0 | HTTP |
-| 9000 | StepUp | 127.0.0.1 | HTTP |
-| 9090 | Prometheus | 0.0.0.0 | HTTP |
-| 9091 | OWL Prometheus | * | HTTP |
-| 9092 | Grafana (alt) | 127.0.0.1 | HTTP |
-| 9093 | Grafana (alt2) | 127.0.0.1 | HTTP |
-| 9094 | OWL | 0.0.0.0 | HTTP |
-| 9095 | OWL (alt) | 0.0.0.0 | HTTP |
-| 9222 | Deno CDP | 127.0.0.1 | HTTP |
+## Integrations
+
+**freebuff-en-patch** (`integrations/freebuff-en-patch/`): English UI patch for the trefeon admin dashboard, generated by inverting Kfowever/freebuff-zh-patch v0.6.1. 90 inverse patterns (84 mechanical + 6 function-based), CJK fast-reject runtime, zh-patch observer displacement. Baked into the canonical build (`frontend/index.html` tag + `frontend/public/assets/freebuff-en.js`) and shipped in image `freebuff-proxy:latest` (built 2026-09-15). Served at `/admin/assets/freebuff-en.js` (auth-exempt route). Tools: `tools/gen-en-patch.mjs` (regenerate), `tools/patch-admin-en.sh` (install/status/restore), `tests/roundtrip.test.mjs` (passes).
