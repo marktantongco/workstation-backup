@@ -1,0 +1,14 @@
+{
+  "enabled": false,
+  "models": [
+    "grok4.6",
+    "claude-sonnet-4-5-20250929",
+    "groq-qwen"
+  ],
+  "synthesisMode": "best",
+  "timeoutMs": 15000,
+  "minResponses": 1,
+  "judgeModel": "groq-qwen",
+  "allowClientOverride": true,
+  "logRequests": true
+}

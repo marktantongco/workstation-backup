@@ -1,0 +1,49 @@
+{
+  "REQUIRED_API_KEY": "<REPLACE_ME>",
+  "SERVER_PORT": 3005,
+  "HOST": "127.0.0.1",
+  "MODEL_PROVIDER": "claude-custom,claude-kiro-oauth,openai-codex-oauth,openai-custom,gemini-cli-oauth,gemini-antigravity",
+  "SYSTEM_PROMPT_FILE_PATH": "configs/input_system_prompt.txt",
+  "SYSTEM_PROMPT_MODE": "overwrite",
+  "PROVIDER_POOLS_FILE_PATH": "configs/provider_pools.json",
+  "CUSTOM_MODELS_FILE_PATH": "configs/custom_models.json",
+  "PROXY_URL": "http://127.0.0.1:1234",
+  "PROXY_ENABLED_PROVIDERS": [],
+  "LOG_ENABLED": true,
+  "LOG_OUTPUT_MODE": "all",
+  "LOG_LEVEL": "info",
+  "LOG_DIR": "logs",
+  "TLS_SIDECAR_ENABLED": false,
+  "GROK_COOKIE_TOKEN": "",
+  "GROK_CF_CLEARANCE": "",
+  "GROK_USER_AGENT": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/136.0.0.0 Safari/537.36",
+  "GROK_BASE_URL": "https://grok.com",
+  "CRON_REFRESH_TOKEN": true,
+  "SCHEDULED_HEALTH_CHECK": {
+    "enabled": true,
+    "startupRun": true,
+    "interval": 300000,
+    "providerTypes": [
+      "claude-custom",
+      "claude-kiro-oauth",
+      "gemini-cli-oauth",
+      "gemini-antigravity",
+      "openai-custom"
+    ]
+  },
+  "providerFallbackChain": {
+    "claude-custom": [
+      "claude-kiro-oauth"
+    ],
+    "claude-kiro-oauth": [
+      "claude-custom"
+    ],
+    "gemini-cli-oauth": [
+      "gemini-antigravity"
+    ],
+    "gemini-antigravity": [
+      "gemini-cli-oauth"
+    ],
+    "openai-custom": []
+  }
+}

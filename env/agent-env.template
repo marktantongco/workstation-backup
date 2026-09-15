@@ -50,3 +50,6 @@ export CLOUDFLARE_ACCOUNT_ID=c0b4bbf070234af4de3708e3b301fbef
 export BRAVE_API_KEY=b86d3b0c-f342-4453-b2cf-2d1a201cf1dd
 export FREEBUFF_API_KEY=<REPLACE_ME>
 export CLAUDE_OBSIDIAN_VAULT="/home/x3/aiworkspace/obsidian-llm-wiki/vault"
+
+# derived from ai-agent-tokens-full.env
+BAP_GATEWAY_KEY=<REPLACE_ME>

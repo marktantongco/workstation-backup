@@ -216,24 +216,42 @@
       "npm": "@ai-sdk/openai-compatible",
       "name": "BlacklistedAIProxy (free model gateway)",
       "options": {
-        "baseURL": "http://127.0.0.1:3001/v1",
-        "apiKey": "123456"
+        "baseURL": "http://127.0.0.1:3005/v1",
+        "apiKey": "{env:BAP_GATEWAY_KEY}"
       },
       "models": {
-        "gemini-3-flash-preview": {
-          "name": "Gemini 3 Flash (free via kiro)"
-        },
-        "gemini-3-pro-preview": {
-          "name": "Gemini 3 Pro (free via kiro)"
-        },
-        "claude-opus-4-5": {
-          "name": "Claude Opus 4.5 (free via kiro)"
+        "glm-4.7-flash-via-zhipu": {
+          "name": "GLM 4.7 Flash (Zhipu free)"
         },
         "claude-sonnet-4-5-20250929": {
-          "name": "Claude Sonnet 4.5 (free via kiro)"
+          "name": "Claude Sonnet 4.5 (KiroPool)"
         },
-        "qwen3-coder-plus": {
-          "name": "Qwen3 Coder Plus (free via qwen)"
+        "claude-opus-4-7": {
+          "name": "Claude Opus 4.7 (KiroPool)"
+        },
+        "gemini-3-flash": {
+          "name": "Gemini 3 Flash (Antigravity)"
+        },
+        "grok4.6": {
+          "name": "Grok 4.6 (grok2api)"
+        },
+        "groq-qwen": {
+          "name": "Qwen 3.8 27B (Groq)"
+        },
+        "command-a": {
+          "name": "Command A+ (Cohere)"
+        },
+        "openai/gpt-oss-20b": {
+          "name": "GPT-OSS 20B (NVIDIA NIM)"
+        },
+        "nvidia/nemotron-3-super-120b-a12b": {
+          "name": "Nemotron 3 Super 120B (NVIDIA NIM)"
+        },
+        "z-ai/glm-5.3-flash": {
+          "name": "GLM 5.3 Flash (NVIDIA NIM)"
+        },
+        "deepseek-ai/deepseek-v4-flash-0731": {
+          "name": "DeepSeek V4 Flash (NVIDIA NIM)"
         }
       }
     }
@@ -349,6 +367,43 @@
         "/home/x3/.local/bin/graphify-mcp"
       ],
       "enabled": true
+    },
+    "owl_dns_synergy": {
+      "type": "local",
+      "command": [
+        "python3",
+        "-m",
+        "owl_dns_synergy.cli",
+        "serve",
+        "--host",
+        "127.0.0.1",
+        "--port",
+        "60000"
+      ],
+      "enabled": false,
+      "cwd": "/home/x3/workspace/unified-owl",
+      "description": "DNS tunneling server, NOT MCP. Use owl_resilient for MCP tools."
+    },
+    "owl_resilient": {
+      "type": "local",
+      "command": [
+        "python3",
+        "/home/x3/workspace/unified-owl/owl_resilient_mcp.py"
+      ],
+      "enabled": true,
+      "cwd": "/home/x3/workspace/unified-owl"
+    },
+    "slipgate": {
+      "type": "local",
+      "command": [
+        "slipgate"
+      ],
+      "enabled": false,
+      "cwd": "/tmp/slipgate",
+      "description": "Unified tunnel manager - DNS tunnels + HTTPS proxies (NaiveProxy) + systemd + user management + slipnet:// URIs",
+      "notes": "Alternative to owl_dns_synergy; supports DNSTT/NoizDNS/Slipstream/VayDNS tunnels + NaiveProxy HTTPS + StunTLS SSH+WS + SOCKS5 + TUI dashboard + systemd services",
+      "prerequisites": "Domain A record pointing at server; ports 53/udp (DNS), 443/tcp (NaiveProxy)",
+      "install": "curl -fsSL https://raw.githubusercontent.com/anonvector/slipgate/main/install.sh | sudo bash"
     }
   },
   "instructions": [

@@ -1,0 +1,32 @@
+{
+  "plugins": {
+    "ai-monitor": {
+      "enabled": true,
+      "description": "AI 接口监控插件 - 捕获请求和响应参数（全链路协议转换监控，流式聚合输出，用于调试和分析）"
+    },
+    "api-potluck": {
+      "enabled": true,
+      "description": "API 大锅饭 - Key 管理和用量统计插件<br>管理端：<a href=\"potluck.html\" target=\"_blank\">potluck.html</a><br>用户端：<a href=\"potluck-user.html\" target=\"_blank\">potluck-user.html</a>"
+    },
+    "default-auth": {
+      "enabled": true,
+      "description": "默认 API Key 认证插件"
+    },
+    "ensemble-synthesizer": {
+      "enabled": false,
+      "description": "Fan-out to N models in parallel and synthesise the best response using vote, best-score, merge, or all modes."
+    },
+    "model-usage-stats": {
+      "enabled": true,
+      "description": "模型用量统计插件<br>接口：<code>/api/model-usage-stats</code><br>页面：<a href=\"model-usage-stats.html\" target=\"_blank\">model-usage-stats.html</a>"
+    },
+    "token-optimizer": {
+      "enabled": true,
+      "description": "Reduces token costs 20–70 % via LRU prompt caching and context optimization (safe / aggressive modes). Dashboard: <a href=\"token-optimizer.html\" target=\"_blank\">token-optimizer.html</a>"
+    },
+    "universal-guard": {
+      "enabled": true,
+      "description": "Four-in-one security layer: rate limiting, PII scrubbing, prompt policy enforcement (jailbreak detection + keyword blocklist), and webhook alerting. Dashboard: <a href=\"universal-guard.html\" target=\"_blank\">universal-guard.html</a>"
+    }
+  }
+}
