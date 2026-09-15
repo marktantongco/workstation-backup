@@ -1,0 +1,9 @@
+[Unit]
+Description=freebuff-proxy admin token rotation (runbook: admin-token-rotation)
+After=network-online.target docker.service
+Wants=network-online.target
+
+[Service]
+Type=oneshot
+User=x3
+ExecStart=/home/x3/freebuff-unified/scripts/operations/runbook.sh admin-token-rotation

@@ -21,8 +21,8 @@
 | 3200 | KiroProxy (alt) | 0.0.0.0 | HTTP | Active |
 | 3457 | OWL API | 0.0.0.0 | HTTP | Active |
 | 5000 | PhantomSignal | 0.0.0.0 | HTTP | Active |
-| 6333 | Qdrant | 0.0.0.0 | HTTP | Active |
-| 6334 | Qdrant (gRPC) | 0.0.0.0 | gRPC | Active |
+| 6333 | Qdrant (obsidian-llm-wiki) | 127.0.0.1 | HTTP | Pinned to loopback 2026-09-16 (was 0.0.0.0, unauthenticated) |
+| 6334 | Qdrant (gRPC, obsidian-llm-wiki) | 127.0.0.1 | gRPC | Pinned to loopback 2026-09-16 |
 | 7897 | AGPX-Relay | 0.0.0.0 | HTTP | Active |
 | 8000 | Autoclaw | 127.0.0.1 | HTTP | Active |
 | 8001 | Autoclaw (alt) | 127.0.0.1 | HTTP | Active |

@@ -43,8 +43,8 @@ connections; the only 0.0.0.0 surfaces left are app services.
 | 7897 | agpx-relay | refused (non-HTTP) | ⚠️ verify auth separately |
 | 6334 | qdrant gRPC | refused externally | ⚠️ gRPC unauth? same gap as 6333 |
 | 8081 / 8443 | mitmdump / caddy | 400 (proxy/TLS handshake) | ✅ expected |
-| 3000 | **grafana** | **200 login page** | ⚠️ exposed; has own auth, confirm default creds changed |
-| **6333** | **qdrant** | **200 API + version banner** | 🚨 **unauthenticated vector DB — top risk** |
+| 3000 | **grafana** | **200 login page** | ✅ verified 2026-09-16: `admin:admin` → 401; custom password set in x1's grafana.ini |
+| **6333** | **qdrant** | **200 API + version banner** | ✅ **resolved 2026-09-16: publishes pinned to loopback (6333+6334); external refused, in-compose consumers unaffected** |
 | 3002/3005/3030/3200/5000/8648/23001/28088/42110/8095 | various app UIs/APIs | 200 | ⚠️ open surface — per-app auth review needed |
 | 3100/3101/9101/30080/8080/60000 | misc | 404 | ⚠️ APIs answering; root 404 only |
 
@@ -54,3 +54,23 @@ confirm Grafana admin creds are not factory defaults. Not executed —
 needs per-service go-ahead.
 
 Port table (`10-port-allocation.md`) updated for 9094/9095.
+
+## Addendum: scheduled rotation + remaining flags (same day)
+
+- **Rotation now scheduled**: `freebuff-admin-token-rotation.timer`
+  (weekly, Mon 04:17 +≤30m jitter, Persistent) → oneshot service →
+  `runbook.sh admin-token-rotation` → trefeon `rotate-admin-token.sh`.
+  Live test-run via systemd: OK (rotation + chain-health self-verify).
+  Also fixed en route: `scripts/operations/runbook.sh` resolved
+  `runbooks/` relative to itself and listed nothing — symlinked to the
+  real `scripts/runbooks/` collection.
+- **qdrant 6333/6334 pinned to loopback** (compose `beb35a5`, pushed);
+  Grafana admin confirmed non-factory (custom password in grafana.ini,
+  `admin:admin` → 401). Both scan flags above resolved.
+- 🚨 **Action needed by user: revoke the leaked PAT.** x1's
+  `obsidian-llm-wiki` clone had a live `ghp_…` token embedded in its
+  git remote URL. Removed from `.git/config` (auth now via gh
+  keyring, verified); **the token itself must be revoked at
+  github.com/settings/tokens** since it sat on disk.
+- Timer units mirrored under `services/systemd/`; runbook mirrored to
+  `scripts/runbook-admin-token-rotation.sh`.

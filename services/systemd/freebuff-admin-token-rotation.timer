@@ -1,0 +1,10 @@
+[Unit]
+Description=Weekly freebuff-proxy admin token rotation (Mon ~04:17 +jitter)
+
+[Timer]
+OnCalendar=Mon *-*-* 04:17:00
+RandomizedDelaySec=30m
+Persistent=true
+
+[Install]
+WantedBy=timers.target
