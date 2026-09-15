@@ -14,7 +14,7 @@ clients ──► freebuff-unified :18080 (auth + rate-limit, passthrough)
 
 | Container | Image | Port | Status | Purpose |
 |-----------|-------|------|--------|---------|
-| freebuff-proxy-trefeon | freebuff-proxy:latest | 0.0.0.0:3457 | Up (healthy) | **Production Freebuff proxy** (pool/sessions/quota + admin dashboard; EN UI patch v0.6.2 baked into image) |
+| freebuff-proxy-trefeon | freebuff-proxy:latest | 127.0.0.1:3457 (loopback-pinned 2026-09-16) | Up (healthy) | **Production Freebuff proxy** (pool/sessions/quota + admin dashboard; EN UI patch v0.6.2 baked into image) |
 | thermoptic-thermoptic-1 | thermoptic-thermoptic | 127.0.0.1:1234 | Up | Chrome MITM proxy (Stealth) |
 | thermoptic-chrome-1 | thermoptic-chrome | 127.0.0.1:14111 | Up | Headless Chrome for MITM |
 | thermoptic-proxyrouter-1 | thermoptic-proxyrouter | 127.0.0.1:31280 | Up | Proxy routing for Thermoptic |
