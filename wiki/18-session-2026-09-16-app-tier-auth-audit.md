@@ -16,23 +16,26 @@ question is what the APIs behind them allow without credentials.
 | 8648 | Hermes (x1) | ✅ gated | same → 401 Unauthorized |
 | 60001 | owl-api | ✅ gated | 401 without key (prior scan) |
 | 18080 | freebuff-unified | ✅ gated by design | 401 without fbu_ key |
-| **3002** | **obsidian-anythingllm** | 🚨 **open session** | `/api/setup-complete`: `RequiresAuth:false, AuthToken:false, JWTSecret:false, MultiUserMode:false` — full workspace access to any LAN client |
-| **42110** | **obsidian-khoj** | 🚨 **anonymous mode** | `/api/settings`, `/api/agents` → 200 as `default@example.com` |
-| **5000** | phantomsignal dashboard | ⚠️ open UI | "Dashboard // PHANTOM SIGNAL" serves unauthenticated; no auth layer found on probed API paths |
-| **28088** | image-gen "AI Studio" | ⚠️ open UI | generation UI serves unauthenticated (title: 智能配图) |
+| **3002** | **obsidian-anythingllm** | ✅ **resolved**: AUTH_TOKEN+JWT_SECRET wired from gitignored .env; setup-complete now `RequiresAuth/AuthToken/JWTSecret` all true; keyless API → 403 JSON |
+| **42110** | **obsidian-khoj** | ✅ **resolved**: `--anonymous-mode` dropped, admin creds moved from hardcoded `admin123` (was committed) to .env; `/api/settings` + `/api/v1/user` → 403 unauthenticated |
+| **5000** | phantomsignal dashboard | ✅ **resolved**: publish pinned to `127.0.0.1:5000` (compose, fork-pushed `367d74e`); external refused |
+| **28088** | image-gen "AI Studio" | ✅ **resolved**: standalone container recreated with `127.0.0.1:28088:8088` (no compose file existed; run config preserved); external refused |
 
-## Recommended remediation (decisions, not executed)
+## Remediation — ALL EXECUTED same day (2026-09-16)
 
-1. **anythingllm**: enable multi-user mode + admin password in its admin
-   UI (or set `AUTH_TOKEN`/`JWT_SECRET` env and restart) — keeps LAN
-   access but adds a gate. Simplest alternative: pin :3002 loopback.
-2. **khoj**: set `KHOJ_ADMIN_EMAIL`/`KHOJ_ADMIN_PASSWORD` (or disable
-   anonymous mode) — currently it exposes settings/agents state.
-3. **phantomsignal / image-gen**: hobby dashboards — either accept the
-   LAN trust model explicitly or pin to loopback. If they proxy any
-   upstream keys, gate them first.
-4. Trust-model note: all four are x3-owned obsidian/ hobby services;
-   the LLM gateways that hold provider keys are the ones properly gated.
+1. **anythingllm**: `AUTH_TOKEN` + `JWT_SECRET` generated into gitignored
+   `.env`, wired in compose; container recreated. Verified: setup-complete
+   flags all true, keyless API 403, SPA catch-all no longer the API layer.
+2. **khoj**: admin creds from .env (weak hardcoded `admin123` removed from
+   compose), `--anonymous-mode` dropped. Verified: 403 on settings/user.
+3. **phantomsignal**: publish pinned loopback (committed; no write access
+   to getphantomsignal upstream → forked to marktantongco/phantomsignal,
+   pushed `367d74e`).
+4. **image-gen**: had no compose file — recreated via `docker run` with
+   identical image/env/restart, publish `127.0.0.1:28088:8088`.
+   Peer audit (zero established connections) preceded every recreate.
+   Every LAN-facing management/UI surface on this host is now either
+   loopback-pinned or auth-gated.
 
 ## Also this session
 
@@ -40,3 +43,11 @@ question is what the APIs behind them allow without credentials.
   container smoke, shellcheck, release job) →
   github.com/marktantongco/workstation-backup/releases/tag/v2.2.0 —
   release notes auto-built from the README version table.
+
+## Addendum: remediation executed (same session)
+
+All four flags above resolved and LAN-verified: anythingllm gated via
+.env secrets, khoj de-anonymized + creds from .env, phantomsignal and
+image-gen pinned to loopback (zero peers before each recreate).
+Remotes: wiki `55f14b9`, phantomsignal fork `367d74e`. **The LAN is now
+either loopback-only or auth-gated for every management surface.**
