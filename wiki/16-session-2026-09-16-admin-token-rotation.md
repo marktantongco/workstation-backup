@@ -46,9 +46,12 @@
 - The `marktantongco` git remote had been dropped from the trefeon clone
   at some point; re-added as
   `https://github.com/marktantongco/freebuff-proxy.git` before pushing.
-- **Known remaining exposure (flagged, not changed):** freebuff-unified's
-  own dashboard listens on `*:9091`. Same exposure class as the trefeon
-  port had; pinning it to loopback needs an explicit decision since
-  `:18080` is the intentional LAN-facing front door.
+- ~~Known remaining exposure (flagged, not changed):~~ **Resolved same
+  day:** freebuff-unified's dashboard `addr` was pinned to
+  `127.0.0.1:9091` in its gitignored instance `config.yaml` and the unit
+  restarted (zero established peers beforehand, so nothing broke).
+  `:18080` remains the one intentional LAN-facing surface (API-key
+  gated). Post-change: external probe refused, loopback dashboard 307,
+  chain healthy.
 - Rotation procedure is repeatable: the change-password endpoint requires
   only the current token + CSRF pair; no container restart needed.

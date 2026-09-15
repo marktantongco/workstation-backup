@@ -74,7 +74,8 @@
 │  │                                                              │  │
 │  │  Prometheus (:9090) ─── Metrics                              │  │
 │  │  Grafana (:3000) ─── Dashboards                             │  │
-│  │  OWL Prometheus (:9091) ─── AI metrics                      │  │
+│  │  Prometheus (:9092, loopback) ─── AI metrics                 │  │
+│  │  freebuff-unified dashboard (:9091, loopback) ─── Gateway UI  │  │
 │  │  Headroom (:8091) ─── Context stats                         │  │
 │  └──────────────────────────────────────────────────────────────┘  │
 └─────────────────────────────────────────────────────────────────────┘
@@ -179,4 +180,4 @@ Browser/App → Thermoptic (:1234, MITM)
 | 6000-6999 | Qdrant (:6333/:6334) | 0.0.0.0 |
 | 7000-7999 | AGPX-Relay (:7897) | 0.0.0.0 |
 | 8000-8999 | Autoclaw (:8000/:8001), KiroProxy (:8080), Thermoptic (:8443), Headroom (:8091), Freebuff (:8787/:8788) | mixed |
-| 9000-9999 | Prometheus (:9090/:9091), Grafana (:9092/:9093), OWL (:9094/:9095) | mixed |
+| 9000-9999 | freebuff-unified dashboard (:9091), Prometheus (:9092), OWL (:9094/:9095) | mixed |

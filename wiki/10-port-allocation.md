@@ -34,12 +34,12 @@
 | 8787 | Freebuff | 127.0.0.1 | HTTP | Active |
 | 8788 | Freebuff (alt) | 0.0.0.0 | HTTP | Active |
 | 9000 | StepUp | 127.0.0.1 | HTTP | Active |
-| 9090 | Prometheus | 0.0.0.0 | HTTP | Active |
-| 9091 | OWL Prometheus | * | HTTP | Active |
-| 9092 | Grafana (alt) | 127.0.0.1 | HTTP | Active |
-| 9093 | Grafana (alt2) | 127.0.0.1 | HTTP | Active |
-| 9094 | OWL | 0.0.0.0 | HTTP | Active |
-| 9095 | OWL (alt) | 0.0.0.0 | HTTP | Active |
+| 9090 | — (vacant; was Prometheus) | — | — | Re-verified 2026-09-16: no listener |
+| 9091 | freebuff-unified dashboard | 127.0.0.1 | HTTP | Pinned to loopback 2026-09-16 (was `*:9091`) |
+| 9092 | Prometheus (owl stack, host proc) | 127.0.0.1 | HTTP | Active; wiki previously mislabeled this slot as Grafana alt |
+| 9093 | python3 service (identity unverified) | 127.0.0.1 | HTTP | Active; loopback |
+| 9094 | OWL (docker) | 0.0.0.0 | HTTP | Active |
+| 9095 | OWL Prometheus (docker, maps to container :9090) | 0.0.0.0 | HTTP | Active |
 | 9222 | Deno CDP | 127.0.0.1 | HTTP | Active |
 
 ## Reserved for Future
