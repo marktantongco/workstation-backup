@@ -26,8 +26,8 @@
 | 7897 | AGPX-Relay | 0.0.0.0 | HTTP | Active |
 | 8000 | Autoclaw | 127.0.0.1 | HTTP | Active |
 | 8001 | Autoclaw (alt) | 127.0.0.1 | HTTP | Active |
-| 8080 | KiroProxy / grokbuild | * | HTTP | Active |
-| 8081 | Thermoptic | 0.0.0.0 | HTTP | Active |
+| 8080 | freebuff-engine (x1 second unified) | 127.0.0.1 | HTTP | Pinned 2026-09-16 (was *:8080) | * | HTTP | Active |
+| 8081 | owl-mitm (mitmdump) | 127.0.0.1 | HTTP | Pinned 2026-09-16 (was open proxy!) | 0.0.0.0 | HTTP | Active |
 | 8091 | Headroom (alt) | 127.0.0.1 | HTTP | Active |
 | 8443 | Thermoptic (TLS) | * | HTTPS | Active |
 | 8648 | OWL | 0.0.0.0 | HTTP | Active |

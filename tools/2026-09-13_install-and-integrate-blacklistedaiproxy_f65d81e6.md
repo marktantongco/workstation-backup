@@ -3,8 +3,8 @@
 - **Session ID:** `ses_f65d81e6bffeUhLUsXHMxs2ULK`
 - **Directory:** /home/x3/workspace
 - **Started:** 2026-09-13 17:45:00
-- **Last activity:** 2026-09-16 03:28:51
-- **Messages:** 2004
+- **Last activity:** 2026-09-16 04:02:28
+- **Messages:** 2023
 
 ---
 
@@ -103932,5 +103932,593 @@ Total: 0 models
 ---
 
 ### 🤖 Assistant — 2026-09-16 03:28:51
+
+> There's an issue - the models list is empty and groq-qwen fails. The parallel initialization might have broken something. Let me check the logs more carefully and check if there's an error.
+
+Issue detected - models empty and groq-qwen failing. Let me check the logs:
+
+
+**tool:bash** (completed) # Check full startup logs
+rtk journalctl -u blacklisted-api.service --since "1 min ago" 2>/dev/null | grep -i "error\|fail\|init\|model" | head -20
+
+```
+timeout=5000; command=# Check full startup logs
+rtk journalctl -u blacklisted-api.service --since "1 m
+--- output ---
+Sep 16 03:30:15 x1-ThinkPad-E14-Gen-5 node[1041325]: [2026-09-16 03:30:15.491] [INFO] [ProviderPoolManager] [ScheduledHealthCheck] Grok2API (:8093) (openai-custom) PASSED: model=grok-4.5 (3901ms)
+Sep 16 03:30:15 x1-ThinkPad-E14-Gen-5 node[1041325]: [2026-09-16 03:30:15.494] [INFO] [ProviderPoolManager] [ScheduledHealthCheck] Completed: 8 passed, 7 failed, 87334ms total
+```
+
+---
+
+### 🤖 Assistant — 2026-09-16 03:31:13
+
+> The models are empty and the health check shows 7 failed. Let me check more logs to see what's happening.
+
+**tool:bash** (completed) # Full startup sequence
+rtk journalctl -u blacklisted-api.service --since "2 min ago" 2>/dev/null | grep -i "config\|provider\|initializ\|pool\|adapt" | head -30
+
+```
+command=# Full startup sequence
+rtk journalctl -u blacklisted-api.service --since "2 min; timeout=5000
+--- output ---
+(no output)
+```
+
+---
+
+### 🤖 Assistant — 2026-09-16 03:32:50
+
+> Let me check the full logs from the service.
+
+**tool:bash** (completed) # Full logs
+rtk journalctl -u blacklisted-api.service --since "2 min ago" 2>/dev/null | head -50
+
+```
+command=# Full logs
+rtk journalctl -u blacklisted-api.service --since "2 min ago" 2>/dev; timeout=5000
+--- output ---
+-- No entries --
+```
+
+---
+
+### 🤖 Assistant — 2026-09-16 03:33:33
+
+> The logs might have been from a different restart. Let me check the current service status and logs.
+
+**tool:bash** (completed) # Check service status
+rtk systemctl status blacklisted-api.service --no-pager | head -20
+
+```
+command=# Check service status
+rtk systemctl status blacklisted-api.service --no-pager |; timeout=5000
+--- output ---
+● blacklisted-api.service - BlacklistedAIProxy - Free model gateway (gemini/kiro/grok/qwen)
+     Loaded: loaded (/etc/systemd/system/blacklisted-api.service; enabled; preset: enabled)
+     Active: active (running) since Wed 2026-09-16 03:28:45 PST; 6min ago
+ Invocation: 97f9d6b485414c2ca8c081d7c88802a9
+   Main PID: 1041301 (node)
+      Tasks: 18 (limit: 18110)
+     Memory: 130.8M (peak: 159.1M)
+        CPU: 6.693s
+     CGroup: /system.slice/blacklisted-api.service
+             ├─1041301 /usr/bin/node src/core/master.js
+             └─1041325 /usr/bin/node /home/x3/workspace/BlacklistedAIProxy/src/services/api-server.js
+Sep 16 03:34:58 x1-ThinkPad-E14-Gen-5 node[1041325]: [2026-09-16 03:34:58.267] [WARN] [ProviderPoolManager] Immediately marked provider as unhealthy: d2e3f4a5-b6c7-8901-defa-234567890002 for type openai-custom. Reason: Request failed with status code 429
+Sep 16 03:34:58 x1-ThinkPad-E14-Gen-5 node[1041325]: [2026-09-16 03:34:58.267] [INFO] [Adapter] getServiceAdapter, provider: openai-custom, uuid: f4a5b6c7-d8e9-0123-fabc-456789000001 (Cohere key)
+Sep 16 03:34:58 x1-ThinkPad-E14-Gen-5 node[1041325]: [2026-09-16 03:34:58.737] [INFO] [ProviderPoolManager] [ScheduledHealthCheck] Cohere key (openai-custom) PASSED: model=command-a-plus-05-2026 (470ms)
+Sep 16 03:34:58 x1-ThinkPad-E14-Gen-5 node[1041325]: [2026-09-16 03:34:58.738] [INFO] [ProviderPoolManager] Marked provider as healthy: f4a5b6c7-d8e9-0123-fabc-456789000001 for type openai-custom
+Sep 16 03:34:58 x1-ThinkPad-E14-Gen-5 node[1041325]: [2026-09-16 03:34:58.738] [INFO] [Adapter] getServiceAdapter, provider: openai-custom, uuid: g2a-grok2api-0001 (Grok2API (:8093))
+Sep 16 03:34:59 x1-ThinkPad-E14-Gen-5 node[1041325]: [2026-09-16 03:34:59.744] [INFO] [ProviderPoolManager] configs/provider_pools.json updated successfully for types: openai-custom
+Sep 16 03:35:03 x1-ThinkPad-E14-Gen-5 node[1041325]: [2026-09-16 03:35:03.288] [INFO] [ProviderPoolManager] [ScheduledHealthCheck] Grok2API (:8093) (openai-custom) PASSED: model=grok-4.5 (4550ms)
+Sep 16 03:35:03 x1-ThinkPad-E14-Gen-5 node[1041325]: [2026-09-16 03:35:03.289] [INFO] [ProviderPoolManager] Marked provider as healthy: g2a-grok2api-0001 for type openai-custom
+Sep 16 03:35:03 x1-ThinkPad-E14-Gen-5 node[1041325]: [2026-09-16 03:35:03.289] [INFO] [ProviderPoolManager] [ScheduledHealthCheck] Completed: 12 passed, 3 failed, 75227ms total
+```
+
+---
+
+### 🧑 User — 2026-09-16 03:33:52
+
+what does this mean by the jailbreak statement: MrKrugen/BlacklistedAIProxy	New	"Jailbreaks client-only restrictions" — Grok, Claude, Codex, Qwen Code → single OpenAI gateway; Go TLS tricks + Promptfoo red-team tested 
+
+---
+
+### 🤖 Assistant — 2026-09-16 03:35:31
+
+> The user is asking about the "jailbreak" statement in the research results for MrKrugen/BlacklistedAIProxy. Let me explain what this means in context.
+
+"Jailbreaks client-only restrictions" means the proxy **converts CLI-only tools into standard OpenAI-compatible APIs**. These tools (Grok, Claude Code, Codex, Qwen Code) only work through their official CLIs — no direct API access. The proxy reverse-engineers their wire protocols/TLS handshakes to expose them as standard `/v1/chat/completions` endpoints.
+
+**What it actually bypasses:**
+| Tool | Normal Access | BlacklistedAIProxy Bypasses |
+|------|---------------|----------------------------|
+| Grok (x.ai) | Web UI only, no API | Device OAuth → `openai-custom` endpoint |
+| Claude Code | CLI only (`claude` command) | OAuth token from `~/.config/claude` → API |
+| Codex (OpenAI) | CLI only (`ocx`/`codex`) | OAuth token from `~/.config/codex` → API |
+| Qwen Code | CLI only | OAuth from `~/.qwen` → API |
+
+**Technical "jailbreak" techniques:**
+1. **OAuth token extraction** — reads refresh tokens from official CLI config files
+2. **Go uTLS sidecar** — mimics Chrome/Browser TLS fingerprint to avoid bot detection
+3. **Protocol translation** — converts Anthropic/Gemini/Grok wire formats → OpenAI format
+4. **Promptfoo red-team tested** — validated against prompt injection/leakage tests
+
+**It does NOT mean:**
+- Stealing paid tokens (uses YOUR OAuth subscriptions)
+- Bypassing auth (you must login first via official CLI)
+- Unlimited free tokens without accounts
+
+Your BAP already does this — it's the same architecture. The research just confirms you're using the leading implementation.
+
+---
+
+### 🧑 User — 2026-09-16 03:38:53
+
+continue with other tasks
+
+---
+
+### 🤖 Assistant — 2026-09-16 03:38:54
+
+> The user wants me to continue with the remaining tasks. Let me check what's left:
+> 
+> 1. The parallel provider initialization broke something - models list is empty and groq-qwen fails
+> 2. Need to fix that
+> 3. Register more Grok accounts (needs user browser)
+> 4. Register more Kiro accounts (needs user CLI)
+> 5. Register more Codex accounts (needs user CLI)
+> 
+> Let me first fix the broken BAP - the models list returning 0 is a regression.
+
+The parallel initialization broke the model list. Let me fix it:
+
+
+
+**tool:read** (completed) BlacklistedAIProxy/src/services/service-manager.js
+
+```
+filePath=/home/x3/workspace/BlacklistedAIProxy/src/services/service-manager.js; limit=80; offset=300
+--- output ---
+<path>/home/x3/workspace/BlacklistedAIProxy/src/services/service-manager.js</path>
+<type>file</type>
+<content>
+300:             });
+301:         }
+302:     } else {
+303:         logger.info('[Initialization] Provider pools are currently empty.');
+304:     }
+305: 
+306:     // Initialize all provider pool nodes at startup
+307:     // 初始化号池中所有提供商的所有节点，以避免首个请求的额外延迟
+308:     if (config.providerPools && Object.keys(config.providerPools).length > 0) {
+309:         let totalInitialized = 0;
+310:         let totalFailed = 0;
+311:         
+312:         for (const [providerType, providerConfigs] of Object.entries(config.providerPools)) {
+313:             // 验证提供商类型是否有效且被包含在 DEFAULT_MODEL_PROVIDERS 中
+314:             // 如果没设置 DEFAULT_MODEL_PROVIDERS，则允许所有已注册的类型
+315:             const isDefaultProvider = !config.DEFAULT_MODEL_PROVIDERS || 
+316:                                      (Array.isArray(config.DEFAULT_MODEL_PROVIDERS) && config.DEFAULT_MODEL_PROVIDERS.includes(providerType));
+317:             
+318:             if (!isDefaultProvider) {
+319:                 // 进一步检查是否是注册提供商的变体（带后缀）
+320:                 const isVariantOfDefault = Array.isArray(config.DEFAULT_MODEL_PROVIDERS) && 
+321:                                           config.DEFAULT_MODEL_PROVIDERS.some(p => providerType.startsWith(p + '-'));
+322:                 
+323:                 if (!isVariantOfDefault) {
+324:                     logger.info(`[Initialization] Skipping provider type '${providerType}' (not in DEFAULT_MODEL_PROVIDERS).`);
+325:                     continue;
+326:                 }
+327:             }
+328:             
+329:             if (!Array.isArray(providerConfigs) || providerConfigs.length === 0) {
+330:                 continue;
+331:             }
+332:             
+333:             logger.info(`[Initialization] Initializing ${providerConfigs.length} node(s) for provider '${providerType}'...`);
+334:             
+335:             // Parallel initialization of provider nodes (avoid serial bottleneck)
+336:             const enabledNodes = providerConfigs.filter(pc => !pc.isDisabled);
+337:             const initPromises = enabledNodes.map(async (providerConfig) => {
+338:                 try {
+339:                     const nodeConfig = { ...config, ...providerConfig, MODEL_PROVIDER: providerType };
+340:                     delete nodeConfig.providerPools;
+341:                     
+342:                     await Promise.resolve().then(() => getServiceAdapter(nodeConfig));
+343:                     
+344:                     const identifier = providerConfig.customName || providerConfig.uuid || 'unknown';
+345:                     logger.info(`  ✓ Initialized node: ${identifier}`);
+346:                     return { success: true, identifier };
+347:                 } catch (error) {
+348:                     const identifier = providerConfig.customName || providerConfig.uuid || 'unknown';
+349:                     logger.warn(`  ✗ Failed to initialize node ${identifier}: ${error.message}`);
+350:                     return { success: false, identifier, error: error.message };
+351:                 }
+352:             });
+353:             
+354:             const results = await Promise.allSettled(initPromises);
+355:             results.forEach((result, idx) => {
+356:                 if (result.status === 'fulfilled' && result.value.success) {
+357:                     totalInitialized++;
+358:                 } else {
+359:                     totalFailed++;
+360:                 }
+361:             });
+362:         }
+363:         
+364:         logger.info(`[Initialization] Provider pool initialization complete: ${totalInitialized} succeeded, ${totalFailed} failed.`);
+365:     } else {
+366:         logger.info('[Initialization] No provider pools configured. Skipping node initialization.');
+367:     }
+368:     return serviceInstances; // Return the collection of initialized service instances
+369: }
+370: 
+371: /**
+372:  * [路由解析层] 负责前置处理前缀和 AUTO 模式转换
+373:  * @private
+374:  * @returns {Promise<Object>} { effectiveProvider, actualModelName }
+375:  */
+376: async function _resolveEffectiveRouting(config, requestedModel) {
+377:     let effectiveProvider = config.MODEL_PROVIDER;
+378:     let actualModelName = requestedModel;
+379: 
+
+(Showing lines 300-379 of 652. Use offset=380 to continue.)
+</content>
+```
+
+---
+
+### 🤖 Assistant — 2026-09-16 03:40:32
+
+> The issue might be that `serviceInstances` is not being populated correctly. The original code was calling `getServiceAdapter` which likely populates some internal cache/state that the model list depends on. Let me check what `getServiceAdapter` does and what `serviceInstances` is.
+
+The `serviceInstances` might need to be populated. Let me check what `getServiceAdapter` returns and how models are registered:
+
+
+**tool:bash** (completed) rtk grep -n "serviceInstances\|getServiceAdapter" /home/x3/workspace/BlacklistedAIProxy/src/services/service-manager.js | head -20
+
+```
+command=rtk grep -n "serviceInstances\|getServiceAdapter" /home/x3/workspace/Blacklisted; timeout=5000
+--- output ---
+1:import { getServiceAdapter, serviceInstances } from '../providers/adapter.js';
+342:                    await Promise.resolve().then(() => getServiceAdapter(nodeConfig));
+368:    return serviceInstances; // Return the collection of initialized service instances
+439:    return getServiceAdapter(serviceConfig);
+513:    const service = getServiceAdapter(serviceConfig);
+```
+
+---
+
+### 🤖 Assistant — 2026-09-16 03:41:51
+
+> The function imports `serviceInstances` from adapter.js but doesn't add to it. The original code called `getServiceAdapter(nodeConfig)` which probably registers the adapter internally. The issue might be that `getServiceAdapter` is synchronous and the `await Promise.resolve().then(...)` wrapper doesn't actually wait for the side effects properly. Let me check the adapter to see what getServiceAdapter does.
+
+**tool:bash** (completed) rtk grep -n "export.*getServiceAdapter\|export.*serviceInstances\|serviceInstances\s*=" /home/x3/workspace/BlacklistedAIProxy/src/providers/adapter.js | head -10
+
+```
+command=rtk grep -n "export.*getServiceAdapter\|export.*serviceInstances\|serviceInstanc; timeout=5000
+--- output ---
+717:export const serviceInstances = {};
+754:export function getServiceAdapter(config) {
+```
+
+---
+
+### 🤖 Assistant — 2026-09-16 03:43:20
+
+> Let me check the getServiceAdapter function to see what it does.
+
+**tool:read** (completed) BlacklistedAIProxy/src/providers/adapter.js
+
+```
+offset=750; filePath=/home/x3/workspace/BlacklistedAIProxy/src/providers/adapter.js; limit=60
+--- output ---
+<path>/home/x3/workspace/BlacklistedAIProxy/src/providers/adapter.js</path>
+<type>file</type>
+<content>
+750:     return false;
+751: }
+752: 
+753: // 服务适配器工厂
+754: export function getServiceAdapter(config) {
+755:     const customNameDisplay = config.customName ? ` (${config.customName})` : '';
+756:     logger.info(`[Adapter] getServiceAdapter, provider: ${config.MODEL_PROVIDER}, uuid: ${config.uuid}${customNameDisplay}`);
+757:     const provider = config.MODEL_PROVIDER;
+758:     const providerKey = getServiceInstanceKey(provider, config.uuid);
+759:     
+760:     if (!serviceInstances[providerKey]) {
+761:         let AdapterClass = adapterRegistry.get(provider);
+762:         
+763:         // 如果没找到精确匹配，尝试通过前缀查找 (例如 openai-custom-1 -> openai-custom)
+764:         if (!AdapterClass) {
+765:             for (const [key, value] of adapterRegistry.entries()) {
+766:                 if (provider === key || provider.startsWith(key + '-')) {
+767:                     AdapterClass = value;
+768:                     break;
+769:                 }
+770:             }
+771:         }
+772:         
+773:         if (AdapterClass) {
+774:             serviceInstances[providerKey] = new AdapterClass(config);
+775:         } else {
+776:             throw new Error(`Unsupported model provider: ${provider}`);
+777:         }
+778:     }
+779:     return serviceInstances[providerKey];
+780: }
+781: 
+
+(End of file - total 781 lines)
+</content>
+```
+
+---
+
+### 🤖 Assistant — 2026-09-16 03:44:38
+
+> So `getServiceAdapter` is synchronous and creates the adapter instance, storing it in `serviceInstances`. The issue with my parallel code is that `await Promise.resolve().then(() => getServiceAdapter(nodeConfig))` might be causing issues with the synchronous nature of `getServiceAdapter`. Let me fix this by calling `getServiceAdapter` directly without the Promise wrapper, or by using a proper async pattern.
+> 
+> Actually, the issue is more subtle. The original code was:
+> ```js
+> getServiceAdapter(nodeConfig); // synchronous call
+> totalInitialized++;
+> ```
+> 
+> My code:
+> ```js
+> await Promise.resolve().then(() => getServiceAdapter(nodeConfig));
+> ```
+> 
+> This should work the same since getServiceAdapter is synchronous. But the issue might be that `serviceInstances` is not being used properly elsewhere, or there's a timing issue with the async initialization.
+> 
+> Wait - the function `initializeServices` is called during startup, and it returns `serviceInstances`. But the parallel version uses `await Promise.allSettled` which should work.
+> 
+> Let me check if the issue is that the model list endpoint depends on the adapters being initialized. The `/v1/models` endpoint calls `providerPoolManager.getAllAvailableModels()` which checks `providerPoolManager.providerStatus` - that's populated by `initializeProviderStatus`, not by `initializeServices`.
+> 
+> Actually, looking at the logs, the health checks are running (12 passed, 3 failed). So the pool manager IS working. The issue is that `/v1/models` returns 0 models.
+> 
+> Let me check the `getAllAvailableModels` function - it checks `this.providerStatus[providerType]`. If the provider pools weren't properly initialized, `providerStatus` might be empty.
+> 
+> Wait, the logs show health checks passing for various providers. So providerStatus should be populated.
+> 
+> Let me check the model list endpoint again - maybe there's an issue with the aggregation logic I added.
+> 
+> Actually, let me just revert the parallel init change and see if it fixes it, then figure out the proper fix.
+
+The issue might be the async wrapper. Let me fix it - `getServiceAdapter` is synchronous:
+
+
+**tool:edit** (completed) BlacklistedAIProxy/src/services/service-manager.js
+
+```
+oldString=logger.info(`[Initialization] Initializing ${providerConfigs.length} node(s) for; newString=logger.info(`[Initialization] Initializing ${providerConfigs.length} node(s) for; filePath=/home/x3/workspace/BlacklistedAIProxy/src/services/service-manager.js
+--- output ---
+Edit applied successfully.
+```
+
+---
+
+### 🤖 Assistant — 2026-09-16 03:46:12
+
+> Now let me restart and test again
+
+**tool:bash** (completed) # Restart BAP
+rtk sudo systemctl restart blacklisted-api.service
+sleep 5
+# Test
+echo "=== Health ==="
+rtk curl -s http://127.0.0.1:3005/health 2>&1
+echo ""
+echo "=== /v1/models ==="
+rtk curl -s http://127.0.0.1:3005/v1/models -H "Authorization: Bearer 123456" 2>&1 | rtk python3 -c "import sys,json; d=json.load(sys.stdin); print(f'Total: {len(d.get(\"data\",[]))} models')" 2>/dev/null
+echo "=== groq-qwen ==="
+rtk curl -s -m 20 http://127.0.0.1:3005/v1/chat/completions -H "Authorization: Bearer 123456" -H "Content-Type: application/json" -d '{"model":"groq-qwen","messages":[{"role":"user","content":"Say hi"}],"max_tokens":10}' 2>&1 | python3 -c 'import sys,json; d=json.load(sys.stdin); print(d.get("choices",[{}])[0].get("message",{}).get("content","FAIL"))' 2>/dev/null
+
+```
+command=# Restart BAP
+rtk sudo systemctl restart blacklisted-api.service
+sleep 5
+# Test
+; timeout=30000
+--- output ---
+=== Health ===
+{"status":"healthy","timestamp":"2026-09-15T19:47:39.719Z","provider":"claude-custom"}
+
+=== /v1/models ===
+Total: 0 models
+=== groq-qwen ===
+FAIL
+```
+
+---
+
+### 🤖 Assistant — 2026-09-16 03:47:40
+
+> Still broken. The issue is likely that `getAllAvailableModels` depends on `providerStatus` which is populated by `initializeProviderStatus`, not `initializeServices`. Let me check the initialization order and see if there's an issue with the provider pool initialization.
+> 
+> Actually, looking at the logs from earlier, the health checks ARE running (12 passed, 3 failed). So the provider pool IS initialized. The issue might be in the model list aggregation.
+> 
+> Let me check the `getAllAvailableModels` function more carefully.
+
+Still broken. Let me check the initialization flow - the model list depends on provider pool status:
+
+
+**tool:bash** (completed) rtk journalctl -u blacklisted-api.service --since "1 min ago" 2>/dev/null | grep -i "init\|provider\|pool\|model" | head -20
+
+```
+command=rtk journalctl -u blacklisted-api.service --since "1 min ago" 2>/dev/null | grep; timeout=5000
+--- output ---
+Sep 16 03:48:10 x1-ThinkPad-E14-Gen-5 node[1081915]: [2026-09-16 03:48:10.847] [WARN] [ProviderPoolManager] [HealthCheck] openai-custom failed after 1 attempts: Request failed with status code 429
+Sep 16 03:48:10 x1-ThinkPad-E14-Gen-5 node[1081915]: [2026-09-16 03:48:10.847] [WARN] [ProviderPoolManager] Health check for d2e3f4a5-b6c7-8901-defa-234567890001 (openai-custom) failed: Request failed with status code 429
+Sep 16 03:48:10 x1-ThinkPad-E14-Gen-5 node[1081915]: [2026-09-16 03:48:10.847] [INFO] [Adapter] getServiceAdapter, provider: openai-custom, uuid: d2e3f4a5-b6c7-8901-defa-234567890002 (Mistral key #2)
+Sep 16 03:48:11 x1-ThinkPad-E14-Gen-5 node[1081915]: [2026-09-16 03:48:11.860] [INFO] [ProviderPoolManager] configs/provider_pools.json updated successfully for types: openai-custom
+Sep 16 03:48:15 x1-ThinkPad-E14-Gen-5 node[1081915]: [2026-09-16 03:48:15.488] [WARN] [ProviderPoolManager] [HealthCheck] openai-custom failed after 1 attempts: Request failed with status code 429
+Sep 16 03:48:15 x1-ThinkPad-E14-Gen-5 node[1081915]: [2026-09-16 03:48:15.488] [WARN] [ProviderPoolManager] [ScheduledHealthCheck] Mistral key #1 (openai-custom) FAILED: Request failed with status code 429 (8422ms)
+Sep 16 03:48:15 x1-ThinkPad-E14-Gen-5 node[1081915]: [2026-09-16 03:48:15.489] [WARN] [ProviderPoolManager] Immediately marked provider as unhealthy: d2e3f4a5-b6c7-8901-defa-234567890001 for type openai-custom. Reason: Request failed with status code 429
+Sep 16 03:48:15 x1-ThinkPad-E14-Gen-5 node[1081915]: [2026-09-16 03:48:15.489] [INFO] [Adapter] getServiceAdapter, provider: openai-custom, uuid: d2e3f4a5-b6c7-8901-defa-234567890002 (Mistral key #2)
+Sep 16 03:48:16 x1-ThinkPad-E14-Gen-5 node[1081915]: [2026-09-16 03:48:16.493] [INFO] [ProviderPoolManager] configs/provider_pools.json updated successfully for types: openai-custom
+Sep 16 03:48:19 x1-ThinkPad-E14-Gen-5 node[1081915]: [2026-09-16 03:48:19.282] [WARN] [ProviderPoolManager] [HealthCheck] openai-custom failed after 1 attempts: Request failed with status code 429
+Sep 16 03:48:19 x1-ThinkPad-E14-Gen-5 node[1081915]: [2026-09-16 03:48:19.282] [WARN] [ProviderPoolManager] Health check for d2e3f4a5-b6c7-8901-defa-234567890002 (openai-custom) failed: Request failed with status code 429
+Sep 16 03:48:19 x1-ThinkPad-E14-Gen-5 node[1081915]: [2026-09-16 03:48:19.282] [INFO] [Adapter] getServiceAdapter, provider: openai-custom, uuid: f4a5b6c7-d8e9-0123-fabc-456789000001 (Cohere key)
+Sep 16 03:48:19 x1-ThinkPad-E14-Gen-5 node[1081915]: [2026-09-16 03:48:19.812] [INFO] [ProviderPoolManager] Marked provider as healthy: f4a5b6c7-d8e9-0123-fabc-456789000001 for type openai-custom (usage count reset)
+Sep 16 03:48:19 x1-ThinkPad-E14-Gen-5 node[1081915]: [2026-09-16 03:48:19.813] [INFO] [Adapter] getServiceAdapter, provider: openai-custom, uuid: g2a-grok2api-0001 (Grok2API (:8093))
+Sep 16 03:48:20 x1-ThinkPad-E14-Gen-5 node[1081915]: [2026-09-16 03:48:20.817] [INFO] [ProviderPoolManager] configs/provider_pools.json updated successfully for types: openai-custom
+Sep 16 03:48:22 x1-ThinkPad-E14-Gen-5 node[1081915]: [2026-09-16 03:48:22.471] [INFO] [ProviderPoolManager] Marked provider as healthy: g2a-grok2api-0001 for type openai-custom (usage count reset)
+Sep 16 03:48:23 x1-ThinkPad-E14-Gen-5 node[1081915]: [2026-09-16 03:48:23.475] [INFO] [ProviderPoolManager] configs/provider_pools.json updated successfully for types: openai-custom
+Sep 16 03:48:23 x1-ThinkPad-E14-Gen-5 node[1081915]: [2026-09-16 03:48:23.812] [WARN] [ProviderPoolManager] [HealthCheck] openai-custom failed after 1 attempts: Request failed with status code 429
+Sep 16 03:48:23 x1-ThinkPad-E14-Gen-5 node[1081915]: [2026-09-16 03:48:23.812] [WARN] [ProviderPoolManager] [ScheduledHealthCheck] Mistral key #2 (openai-custom) FAILED: Request failed with status code 429 (8323ms)
+Sep 16 03:48:23 x1-ThinkPad-E14-Gen-5 node[1081915]: [2026-09-16 03:48:23.812] [WARN] [ProviderPoolManager] Immediately marked provider as unhealthy: d2e3f4a5-b6c7-8901-defa-234567890002 for type openai-custom. Reason: Request failed with status code 429
+```
+
+---
+
+### 🤖 Assistant — 2026-09-16 03:49:10
+
+> The health checks are running but many are failing (429 rate limited). The provider pool seems to be initialized. The issue might be that the models are not being added to the model list because the provider pool initialization happens AFTER the first model list request, or there's a timing issue.
+> 
+> Wait, looking at the logs more carefully - the health checks are running and some providers are marked healthy. The `getAllAvailableModels` should be reading from `providerStatus`.
+> 
+> Let me check the model list endpoint logic again. The issue might be that the model list is called before the initialization completes, or there's a race condition.
+> 
+> Actually, I think the problem might be that `initializeServices` is called during startup, but `initializeProviderStatus` (which populates `providerStatus`) might not be called yet when the first model list request comes in.
+> 
+> Let me check the startup sequence in master.js or api-server.js.
+
+**tool:bash** (completed) rtk grep -n "initializeServices\|initializeProvider\|initializeAll" /home/x3/workspace/BlacklistedAIProxy/src/core/master.js | head -10
+
+```
+command=rtk grep -n "initializeServices\|initializeProvider\|initializeAll" /home/x3/wor; timeout=5000
+--- output ---
+(no output)
+```
+
+---
+
+### 🤖 Assistant — 2026-09-16 03:51:48
+
+> Let me search in other files.
+
+**tool:bash** (completed) rtk grep -rn "initializeServices\|initializeProviderStatus" /home/x3/workspace/BlacklistedAIProxy/src --include="*.js" | head -15
+
+```
+timeout=5000; command=rtk grep -rn "initializeServices\|initializeProviderStatus" /home/x3/workspace/B
+--- output ---
+/home/x3/workspace/BlacklistedAIProxy/src/providers/provider-pool-manager.js:115:        this.initializeProviderStatus();
+/home/x3/workspace/BlacklistedAIProxy/src/providers/provider-pool-manager.js:761:    initializeProviderStatus(syncFromConfig = false) {
+/home/x3/workspace/BlacklistedAIProxy/src/services/service-manager.js:118:        providerPoolManager.initializeProviderStatus();
+/home/x3/workspace/BlacklistedAIProxy/src/services/service-manager.js:278:        providerPoolManager.initializeProviderStatus();
+/home/x3/workspace/BlacklistedAIProxy/src/ui-modules/config-api.js:30:                providerPoolManager.initializeProviderStatus(true);
+/home/x3/workspace/BlacklistedAIProxy/src/ui-modules/provider-api.js:519:            providerPoolManager.initializeProviderStatus();
+/home/x3/workspace/BlacklistedAIProxy/src/ui-modules/provider-api.js:633:            providerPoolManager.initializeProviderStatus();
+/home/x3/workspace/BlacklistedAIProxy/src/ui-modules/provider-api.js:713:            providerPoolManager.initializeProviderStatus();
+/home/x3/workspace/BlacklistedAIProxy/src/ui-modules/provider-api.js:1001:            providerPoolManager.initializeProviderStatus();
+/home/x3/workspace/BlacklistedAIProxy/src/ui-modules/provider-api.js:1100:            providerPoolManager.initializeProviderStatus();
+/home/x3/workspace/BlacklistedAIProxy/src/ui-modules/provider-api.js:1464:            providerPoolManager.initializeProviderStatus(true);
+/home/x3/workspace/BlacklistedAIProxy/src/ui-modules/provider-api.js:1576:            providerPoolManager.initializeProviderStatus();
+```
+
+---
+
+### 🤖 Assistant — 2026-09-16 03:53:06
+
+> So `initializeProviderStatus` is called from `service-manager.js:118` and `service-manager.js:278`. Let me check the service-manager.js to see the initialization order.
+
+**tool:read** (completed) BlacklistedAIProxy/src/services/service-manager.js
+
+```
+filePath=/home/x3/workspace/BlacklistedAIProxy/src/services/service-manager.js; offset=110; limit=50
+--- output ---
+<path>/home/x3/workspace/BlacklistedAIProxy/src/services/service-manager.js</path>
+<type>file</type>
+<content>
+110:         }
+111:     } else {
+112:         logger.info('[Auto-Link] No new configs to link');
+113:     }
+114:     
+115:     // Update provider pool manager if available
+116:     if (providerPoolManager) {
+117:         providerPoolManager.providerPools = config.providerPools;
+118:         providerPoolManager.initializeProviderStatus();
+119:     }
+120:     return config.providerPools;
+121: }
+122: 
+123: /**
+124:  * 关联单个凭证文件到对应的提供商
+125:  * @param {Object} config - 服务器配置对象
+126:  * @param {string} credPath - 凭证文件路径（相对或绝对路径）
+127:  * @returns {Promise<Object|null>} 返回关联结果或 null
+128:  */
+129: async function linkSingleCredential(config, credPath) {
+130:     try {
+131:         // 规范化路径
+132:         const absolutePath = path.isAbsolute(credPath) ? credPath : path.join(process.cwd(), credPath);
+133:         const relativePath = path.relative(process.cwd(), absolutePath);
+134:         
+135:         // 检查文件是否存在
+136:         if (!fs.existsSync(absolutePath)) {
+137:             logger.warn(`[Auto-Link] Credential file not found: ${relativePath}`);
+138:             return null;
+139:         }
+140:         
+141:         // 检查文件扩展名
+142:         const ext = path.extname(absolutePath).toLowerCase();
+143:         if (ext !== '.json') {
+144:             logger.warn(`[Auto-Link] Only JSON files are supported: ${relativePath}`);
+145:             return null;
+146:         }
+147:         
+148:         // 根据文件路径确定提供商类型
+149:         let matchedMapping = null;
+150:         for (const mapping of PROVIDER_MAPPINGS) {
+151:             const configsPath = path.join(process.cwd(), 'configs', mapping.dirName);
+152:             // 检查文件是否在该提供商的配置目录下
+153:             if (absolutePath.startsWith(configsPath)) {
+154:                 matchedMapping = mapping;
+155:                 break;
+156:             }
+157:         }
+158:         
+159:         if (!matchedMapping) {
+
+(Showing lines 110-159 of 653. Use offset=160 to continue.)
+</content>
+```
+
+---
+
+### 🤖 Assistant — 2026-09-16 03:59:20
+
+> Let me check the initializeAll function that calls initializeServices:
+
+**tool:bash** (completed) rtk grep -n "initializeAll\|export.*initializeAll" /home/x3/workspace/BlacklistedAIProxy/src/services/service-manager.js
+
+```
+command=rtk grep -n "initializeAll\|export.*initializeAll" /home/x3/workspace/Blackliste; timeout=5000
+--- output ---
+(no output)
+```
+
+---
+
+### 🤖 Assistant — 2026-09-16 04:00:57
+
+> Let me search for where initializeServices is called from the entry point.
+
+**tool:bash** (completed) rtk grep -rn "initializeServices" /home/x3/workspace/BlacklistedAIProxy/src --include="*.js" | head -10
+
+```
+command=rtk grep -rn "initializeServices" /home/x3/workspace/BlacklistedAIProxy/src --in; timeout=5000
+--- output ---
+(no output)
+```
+
+---
+
+### 🤖 Assistant — 2026-09-16 04:02:28
 
 ---
