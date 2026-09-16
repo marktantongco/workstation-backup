@@ -7,7 +7,6 @@
   "SYSTEM_PROMPT_MODE": "overwrite",
   "PROVIDER_POOLS_FILE_PATH": "configs/provider_pools.json",
   "CUSTOM_MODELS_FILE_PATH": "configs/custom_models.json",
-  "PROXY_URL": "http://127.0.0.1:1234",
   "PROXY_ENABLED_PROVIDERS": [],
   "LOG_ENABLED": true,
   "LOG_OUTPUT_MODE": "all",
