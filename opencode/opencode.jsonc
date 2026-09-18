@@ -3,8 +3,8 @@
   "default_agent": "build",
   "snapshot": false,
   "snapshots": false,
-  "small_model": "opencode-go/mimo-v2.5-free",
-  "model": "opencode-go/nemotron-3.5-lightning-free",
+  "small_model": "blacklisted/groq-qwen",
+  "model": "blacklisted/z-ai/glm-5.3-flash",
   "permission": {
     "*": "allow",
     "bash": "allow",
